@@ -214,7 +214,7 @@ c_test_CNC_bi
 
 # therefore, consider the model with the k_words
 
-[cm_C, sensi_C, speci_C, rightcl_C, ypred_C] = getValues(c_words, [], 
+[cm_C, sensi_C, speci_C, accuracy_C, ypred_C] = getValues(c_words, [], 
                                                            X_train, y_train)
 
 cm_C
@@ -224,7 +224,7 @@ cm_C
 sensi_C # 0.9306818181818182
 speci_C # 0.9373681434599156
 sensi_C + speci_C # 1.8680499616417339
-rightcl_C # 0.9366729678638941
+accuracy_C # 0.9366729678638941
 
 # and consider the model without "gekundigt"
 c_words_wog = ['auszahl', 'kundig', 'kundigungsbestat', 'kundigungstermin',
@@ -296,7 +296,7 @@ nc_test_CNC
 
 ### model with beitragspaus, geschutzt dat and gesundheitsdat ==================
 
-[cm_bg, sensi_bg, speci_bg, rightcl_bg, ypred_bg] = getValues(c_words_final, ['beitragspaus', 'geschutzt dat', 'gesundheitsdat'], 
+[cm_bg, sensi_bg, speci_bg, accuracy_bg, ypred_bg] = getValues(c_words_final, ['beitragspaus', 'geschutzt dat', 'gesundheitsdat'], 
                                                            X_train, y_train)
 
 cm_bg
@@ -341,7 +341,7 @@ len(X_train_NC)/len(X_train_C) # 8.62
 
 ### model with beitragspaus, geschutzt dat, gesundheitsdat, erhoh =============
 
-[cm_bge, sensi_bge, speci_bge, rightcl_bge, ypred_bge] = getValues(c_words_final, ['beitragspaus', 'geschutzt dat', 'gesundheitsdat', 'erhoh'], 
+[cm_bge, sensi_bge, speci_bge, accuracy_bge, ypred_bge] = getValues(c_words_final, ['beitragspaus', 'geschutzt dat', 'gesundheitsdat', 'erhoh'], 
                                                            X_train, y_train)
 
 cm_bge
@@ -384,7 +384,7 @@ nk_test_CNC_bge
 nc_words_final = ['beitragspaus', 'geschutzt dat', 'gesundheitsdat', 'erhoh']
 
 [cm_WS_train, sensi_WS_train, speci_WS_train, 
- rightcl_WS_train, ypred_WS_train] = getValues(c_words_final, nc_words_final,  
+ accuracy_WS_train, ypred_WS_train] = getValues(c_words_final, nc_words_final,  
                                     X_train, y_train)
   
 cm_WS_train
@@ -397,11 +397,11 @@ speci_WS_train
 # 0.9647943037974683
 sensi_WS_train + speci_WS_train
 # 1.8897943037974683
-rightcl_WS_train
+accuracy_WS_train
 # 0.9606568998109641                                    
                                                 
 [cm_WS_test, sensi_WS_test, speci_WS_test, 
- rightcl_WS_test, ypred_WS_test] = getValues(c_words_final, nc_words_final,  
+ accuracy_WS_test, ypred_WS_test] = getValues(c_words_final, nc_words_final,  
                                     X_test, y_test)       
                             
 cm_WS_test
@@ -414,7 +414,7 @@ speci_WS_test
 # 0.9661642571516457
 sensi_WS_test + speci_WS_test
 # 1.8865886603346695
-rightcl_WS_test
+accuracy_WS_test
 # 0.9614112458654906    
                                            
 os.chdir(r'W:\your_folder\Output')
@@ -476,7 +476,7 @@ dtm_test_small.columns = features
 
 ### with the large matrices ===================================================
 random.seed(1802)
-[cm_RF_train, sensi_RF_train, speci_RF_train, rightcl_RF_train, y_pred_RF_train, 
+[cm_RF_train, sensi_RF_train, speci_RF_train, accuracy_RF_train, y_pred_RF_train, 
  mydf_RF_train] = RFAll(dtm_train, dtm_train, y_train_10, y_train_10, X_train_ind)
    
 cm_RF_train
@@ -485,7 +485,7 @@ cm_RF_train
 sensi_RF_train # 1.0
 speci_RF_train # 0.9129746835443038
 sensi_RF_train + speci_RF_train # 1.9129746835443038
-rightcl_RF_train # 0.9419831223628692
+accuracy_RF_train # 0.9419831223628692
  
 probs_pos_RF_train = mydf_RF_train['Prob pos'][mydf_RF_train['real class'] == 1]
 probs_neg_RF_train = mydf_RF_train['Prob pos'][mydf_RF_train['real class'] == 0]           
@@ -512,7 +512,7 @@ if min(probs_pos_RF_train) > max(probs_neg_RF_train):
 
 
 random.seed(1802)
-[cm_RF_test, sensi_RF_test, speci_RF_test, rightcl_RF_test, y_pred_RF_test, 
+[cm_RF_test, sensi_RF_test, speci_RF_test, accuracy_RF_test, y_pred_RF_test, 
  mydf_RF_test] = RFAll(dtm_train, dtm_test, y_train_10, y_test_10, X_test_ind,
                        threshold_RF = ts_RF)
        
@@ -523,7 +523,7 @@ cm_RF_test
 sensi_RF_test #  0.4960212201591512
 speci_RF_test # 0.5029221777914488
 sensi_RF_test + speci_RF_test #  0.9989433979505999
-rightcl_RF_test  # 0.5022050716648291                 
+accuracy_RF_test  # 0.5022050716648291                 
 
 probs_pos_RF_test = mydf_RF_test['Prob pos'][mydf_RF_test['real class'] == 1]
 probs_neg_RF_test = mydf_RF_test['Prob pos'][mydf_RF_test['real class'] == 0]
@@ -536,7 +536,7 @@ auc_RF_test = metrics.roc_auc_score(y_test_10, mydf_RF_test['Prob pos'])
 ### with the small matrices ==================================================         
 
 random.seed(1802)
-[cm_RF_train_sm, sensi_RF_train_sm, speci_RF_train_sm, rightcl_RF_train_sm, 
+[cm_RF_train_sm, sensi_RF_train_sm, speci_RF_train_sm, accuracy_RF_train_sm, 
  y_pred_RF_train_sm, mydf_RF_train_sm] = RFAll(dtm_train_small, dtm_train_small, y_train_small, y_train_small, X_train_ind)
    
 cm_RF_train_sm
@@ -545,7 +545,7 @@ cm_RF_train_sm
 sensi_RF_train_sm # 0.9237869198312236
 speci_RF_train_sm # 0.9728375527426161
 sensi_RF_train_sm + speci_RF_train_sm #  1.8966244725738397
-rightcl_RF_train_sm #  0.9564873417721519
+accuracy_RF_train_sm #  0.9564873417721519
  
 
 probs_pos_RF_train_sm = mydf_RF_train_sm['Prob pos'][mydf_RF_train_sm['real class'] == 1]
@@ -571,12 +571,12 @@ if min(probs_pos_RF_train_sm) > max(probs_neg_RF_train_sm):
 
 y_pred_RF_train_sm_new = getPred(mydf_RF_train_sm['Prob pos'], ts_sm_RF)
 [cm_RF_train_sm_new, sensi_RF_train_sm_new, speci_RF_train_sm_new,
- rightcl_RF_train_sm_new] = getValuesClass(y_train_small, y_pred_RF_train_sm_new)
+ accuracy_RF_train_sm_new] = getValuesClass(y_train_small, y_pred_RF_train_sm_new)
 
 # same as above
 
 random.seed(1802)
-[cm_RF_test_sm, sensi_RF_test_sm, speci_RF_test_sm, rightcl_RF_test_sm, 
+[cm_RF_test_sm, sensi_RF_test_sm, speci_RF_test_sm, accuracy_RF_test_sm, 
  y_pred_RF_test_sm, mydf_RF_test_sm] = RFAll(dtm_train_small, dtm_test_small, y_train_small, y_test_small, X_test_ind,
                        threshold_RF = ts_sm_RF)
                                              
@@ -587,7 +587,7 @@ cm_RF_test_sm
 sensi_RF_test_sm # 0.9124668435013262
 speci_RF_test_sm # 0.9763149800061519
 sensi_RF_test_sm + speci_RF_test_sm # 1.888781823507478
-rightcl_RF_test_sm  # 0.9696802646085998
+accuracy_RF_test_sm  # 0.9696802646085998
 
 probs_pos_RF_test_sm = mydf_RF_test_sm['Prob pos'][mydf_RF_test_sm['real class'] == 1]
 probs_neg_RF_test_sm = mydf_RF_test_sm['Prob pos'][mydf_RF_test_sm['real class'] == 0]
@@ -630,7 +630,7 @@ sensi_RF_test_sm + speci_RF_test_sm # 1.888781823507478
 ### on my tokens =========================================================
 
 random.seed(1802)
-[cm_SVM_train_sm, sensi_SVM_train_sm, speci_SVM_train_sm, rightcl_SVM_train_sm, 
+[cm_SVM_train_sm, sensi_SVM_train_sm, speci_SVM_train_sm, accuracy_SVM_train_sm, 
  y_pred_SVM_train_sm, mydf_SVM_train_sm] = SVMAll(dtm_train_small, dtm_train_small, y_train_small, y_train_small, X_train_ind)
    
 cm_SVM_train_sm
@@ -640,7 +640,7 @@ cm_SVM_train_sm
 sensi_SVM_train_sm #  0.9082278481012658 
 speci_SVM_train_sm # 0.9684862869198312
 sensi_SVM_train_sm + speci_SVM_train_sm # 1.876714135021097
-rightcl_SVM_train_sm # 0.9484001406469761
+accuracy_SVM_train_sm # 0.9484001406469761
  
 
 probs_pos_SVM_train_sm = mydf_SVM_train_sm['Prob pos'][mydf_SVM_train_sm['real class'] == 1]
@@ -666,7 +666,7 @@ if min(probs_pos_SVM_train_sm) > max(probs_neg_SVM_train_sm):
 
 y_pred_SVM_train_sm_new = getPred(mydf_SVM_train_sm['Prob pos'], ts_sm_SVM)
 [cm_SVM_train_sm_new, sensi_SVM_train_sm_new, speci_SVM_train_sm_new,
- rightcl_SVM_train_sm_new] = getValuesClass(y_train_small, y_pred_SVM_train_sm_new)
+ accuracy_SVM_train_sm_new] = getValuesClass(y_train_small, y_pred_SVM_train_sm_new)
 
 cm_SVM_train_sm_new
 # array([[3504,  288],
@@ -674,12 +674,12 @@ cm_SVM_train_sm_new
 sensi_SVM_train_sm_new # 0.9240506329113924  
 speci_SVM_train_sm_new # 0.9620253164556962
 sensi_SVM_train_sm_new + speci_SVM_train_sm_new # 1.8860759493670887
-rightcl_SVM_train_sm_new # 0.9493670886075949
+accuracy_SVM_train_sm_new # 0.9493670886075949
 
 # therefore, the LOWER one is the final model!
 
 random.seed(1802)
-[cm_SVM_test_sm, sensi_SVM_test_sm, speci_SVM_test_sm, rightcl_SVM_test_sm, 
+[cm_SVM_test_sm, sensi_SVM_test_sm, speci_SVM_test_sm, accuracy_SVM_test_sm, 
  y_pred_SVM_test_sm, mydf_SVM_test_sm] = SVMAll(dtm_train_small, dtm_test_small, y_train_small, y_test_small, X_test_ind,
                        threshold_SVM = ts_sm_SVM)
        
@@ -689,7 +689,7 @@ cm_SVM_test_sm
 sensi_SVM_test_sm #  0.9257294429708223
 speci_SVM_test_sm #   0.9680098431251922
 sensi_SVM_test_sm + speci_SVM_test_sm #  1.8937392860960145
-rightcl_SVM_test_sm # 0.9636163175303197
+accuracy_SVM_test_sm # 0.9636163175303197
 
 probs_pos_SVM_test_sm = mydf_SVM_test_sm['Prob pos'][mydf_SVM_test_sm['real class'] == 1]
 probs_neg_SVM_test_sm = mydf_SVM_test_sm['Prob pos'][mydf_SVM_test_sm['real class'] == 0]
@@ -705,7 +705,7 @@ os.chdir(r'W:\your_folder\Output')
 ### on the full matrices ===================================================
 
 random.seed(1802)
-[cm_SVM_train, sensi_SVM_train, speci_SVM_train, rightcl_SVM_train, 
+[cm_SVM_train, sensi_SVM_train, speci_SVM_train, accuracy_SVM_train, 
  y_pred_SVM_train, mydf_SVM_train] = SVMAll(dtm_train, dtm_train, y_train_10, y_train_10, X_train_ind)
    
 cm_SVM_train
@@ -715,7 +715,7 @@ cm_SVM_train
 sensi_SVM_train # 1.0
 speci_SVM_train # 0.7223101265822784
 sensi_SVM_train + speci_SVM_train # 1.7223101265822784
-rightcl_SVM_train # 0.814873417721519
+accuracy_SVM_train # 0.814873417721519
  
 
 probs_pos_SVM_train = mydf_SVM_train['Prob pos'][mydf_SVM_train['real class'] == 1]
@@ -741,7 +741,7 @@ if min(probs_pos_SVM_train) > max(probs_neg_SVM_train):
 
 y_pred_SVM_train_new = getPred(mydf_SVM_train['Prob pos'], ts_SVM)
 [cm_SVM_train_new, sensi_SVM_train_new, speci_SVM_train_new,
- rightcl_SVM_train_new] = getValuesClass(y_train_10, y_pred_SVM_train_new)
+ accuracy_SVM_train_new] = getValuesClass(y_train_10, y_pred_SVM_train_new)
 
 cm_SVM_train_new
 # array([[3792,    0],
@@ -750,12 +750,12 @@ cm_SVM_train_new
 sensi_SVM_train_new # 1.0
 speci_SVM_train_new # 0.9129746835443038
 sensi_SVM_train_new + speci_SVM_train_new #1.9129746835443038
-rightcl_SVM_train_new # 0.9419831223628692
+accuracy_SVM_train_new # 0.9419831223628692
 
 # the lower model is the better one
 
 random.seed(1802)
-[cm_SVM_test, sensi_SVM_test, speci_SVM_test, rightcl_SVM_test, 
+[cm_SVM_test, sensi_SVM_test, speci_SVM_test, accuracy_SVM_test, 
  y_pred_SVM_test, mydf_SVM_test] = SVMAll(dtm_train, dtm_test, y_train_10, y_test_10, X_test_ind,
                        threshold_SVM = ts_SVM)
        
@@ -769,7 +769,7 @@ speci_SVM_test # 0.8634266379575515
 
 sensi_SVM_test + speci_SVM_test # 1.0066627122281084
 
-rightcl_SVM_test # 0.7885887541345094
+accuracy_SVM_test # 0.7885887541345094
 
 probs_pos_SVM_test = mydf_SVM_test['Prob pos'][mydf_SVM_test['real class'] == 1]
 probs_neg_SVM_test = mydf_SVM_test['Prob pos'][mydf_SVM_test['real class'] == 0]
