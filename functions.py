@@ -46,7 +46,7 @@ random.seed(1921)
 # saving protected PDFs as unprotected
 # =============================================================================
 
-def pdfUmspeichern(file, datafolder, pdffolder):
+def pdfSaveNew(file, datafolder, pdffolder):
     '''
     saves PDF "file" as an unprotected PDF
     
@@ -62,7 +62,7 @@ def pdfUmspeichern(file, datafolder, pdffolder):
     pdf.save(file)
     
 
-def vielUmspeichern(datafolder, pdffolder):
+def lotSaveNew(datafolder, pdffolder):
     '''
     saves all protected PDFs from datafolder as unprotected PDFs in 
     pdffolder
@@ -73,9 +73,9 @@ def vielUmspeichern(datafolder, pdffolder):
     Outputs:    no output in Python, unprotected PDFs are saved in pdffolder
     '''
     for i in next(os.walk(datafolder))[2]:
-        pdfUmspeichern(i, datafolder, pdffolder)
+        pdfSaveNew(i, datafolder, pdffolder)
              
-def teilUmspeichern(separation, path0, path1, path2):
+def partSaveNew(separation, path0, path1, path2):
     '''
     saves the data from path0 into path1 and path2 based on a split
 
@@ -87,7 +87,7 @@ def teilUmspeichern(separation, path0, path1, path2):
     Outputs:    none, files are saved in the respective folders
     '''
     for i in separation:
-        pdfUmspeichern(i, path0, path1)
+        pdfSaveNew(i, path0, path1)
       
     ges = []
     for i in os.walk(path0):
@@ -95,14 +95,14 @@ def teilUmspeichern(separation, path0, path1, path2):
     
     for i in ges[0][2]:
         if i not in separation:
-            pdfUmspeichern(i, path0, path2)
+            pdfSaveNew(i, path0, path2)
 
         
 # =============================================================================
 # converting PDFs to images 
 # =============================================================================
         
-def getBild(file, pdffolder):
+def getPic(file, pdffolder):
     '''
     saves an unprotected PDF as a ppm file
 
@@ -118,9 +118,9 @@ def getBild(file, pdffolder):
     return im
     
  
-def getBilder(pdffolder):
+def getPics(pdffolder):
     '''
-    applies getBild to each file in pdffolder
+    applies getPic to each file in pdffolder
     
     Inputs:      pdffolder - folder with files to be converted
     
@@ -128,7 +128,7 @@ def getBilder(pdffolder):
     '''
     pictures = []
     for i in next(os.walk(pdffolder))[2]:
-        pictures.append(getBild(i, pdffolder))
+        pictures.append(getPic(i, pdffolder))
     return pictures   
 
 # =============================================================================
@@ -136,7 +136,7 @@ def getBilder(pdffolder):
 # =============================================================================
 
 
-def bildAuslesen(s):
+def picRead(s):
     '''
     extracts text from each image in s
     
@@ -155,20 +155,20 @@ def bildAuslesen(s):
 
 def getText(pdffolder):
     '''
-    extracts text from files (combination of getBilder and
-                                bildAuslesen)
+    extracts text from files (combination of getPics and
+                                picRead)
 
     Inputs:     pdffolder - folder with unprotected PDF files
     
     Outputs:    txt - list of extracted texts from the files
 
     '''
-    pictures = getBilder(pdffolder)
-    txt = bildAuslesen(bilder)
+    pictures = getPics(pdffolder)
+    txt = picRead(bilder)
     return txt
 
 
-def ordnerEinlesen(pdffolder):
+def getFolder(pdffolder):
     '''
     reads the texts of a folder and returns how long it takes
     
@@ -184,7 +184,7 @@ def ordnerEinlesen(pdffolder):
     duration = end - start
     return txt, duration
 
-def seitenZusammen(texts):
+def pagesTogether(texts):
     '''
     merges multiple pages
     
@@ -232,7 +232,7 @@ def createDuplDict(txt):
     dupl_amount = []
     i = 1
     while sum(dupl_amount) < len(txt):
-        dupl_amount.append(len(myGleich(dupl_vect, i)))
+        dupl_amount.append(len(myEqual(dupl_vect, i)))
         i += 1
     occurs = dict(zip(range(1, i + 1), dupl_amount))
     return(occurs)
@@ -261,7 +261,7 @@ def createDuplDict(txt):
 # names, VNR, business transaction, corona indicator
 
 # difference to vector.vergleich(): also returns multiple results!
-def myGleich(vector, comparison):
+def myEqual(vector, comparison):
     # checks
     '''
     checks whether the word "comparison" occurs in "vector" and where
@@ -276,7 +276,7 @@ def myGleich(vector, comparison):
     return res 
 
 
-def myvectorGleich(vector1, vector2):
+def myVectorEqual(vector1, vector2):
     '''
     checks for which i vector1[i] = vector2[i]
     
@@ -289,7 +289,7 @@ def myvectorGleich(vector1, vector2):
     return res    
 
     
-def searchIndizes(document, token):
+def searchIndices(document, token):
     # checks
     '''
     checks whether the searched token occurs in the document and returns the
@@ -302,15 +302,15 @@ def searchIndizes(document, token):
                       occur in the vector
     '''
     vector = document.split()
-    res = myGleich(vector, token)
+    res = myEqual(vector, token)
     return(res)
 
 
-def exWort(indices):   
+def exWord(indices):   
     '''
     returns TRUE if the word occurs and FALSE otherwise
     
-    Inputs:     indices - output of searchIndizes
+    Inputs:     indices - output of searchIndices
     
     Outputs:    TRUE/ FALSE
     '''
@@ -318,7 +318,7 @@ def exWort(indices):
     
 
 
-def naechsteZeichen(document, tok, n):
+def nextSign(document, tok, n):
    '''
    finds the next n tokens after a given token
     
@@ -330,7 +330,7 @@ def naechsteZeichen(document, tok, n):
                    special case: end of document: []
    '''
    document_tok = document.split()
-   tokenstarter = searchIndizes(document, tok)
+   tokenstarter = searchIndices(document, tok)
    # create A
    A = []
    for i in range(len(tokenstarter)): 
@@ -347,7 +347,7 @@ def naechsteZeichen(document, tok, n):
    return A
 
 
-def findeFunc(document, tokenvector, n):
+def findFunc(document, tokenvector, n):
     '''
     finds the next n tokens after the tokens in tokenvector
     
@@ -363,9 +363,9 @@ def findeFunc(document, tokenvector, n):
     
     # if only one token is searched
     if isinstance(tokenvector, str):
-        tk = searchIndizes(document, tokenvector)
-        if exWort(tk):
-            res = naechsteZeichen(document, tokenvector, n)
+        tk = searchIndices(document, tokenvector)
+        if exWord(tk):
+            res = nextSign(document, tokenvector, n)
             poss_token += res
             
     # if a vector is searched        
@@ -373,9 +373,9 @@ def findeFunc(document, tokenvector, n):
         for i in range(len(tokenvector)):
             count += 1
             token = tokenvector[i]
-            tk = searchIndizes(document, token)
-            if exWort(tk):
-               locals()['token_%s' % count] = naechsteZeichen(document, token, n)
+            tk = searchIndices(document, token)
+            if exWord(tk):
+               locals()['token_%s' % count] = nextSign(document, token, n)
                names += [count]
         for i in names:
             poss_token += locals()['token_%s' % i]
@@ -415,7 +415,7 @@ def levenMatrix(vector):
     LM.columns = vector
     return(LM)
 
-def findEinzelToken(possibilities):
+def findToken(possibilities):
     '''
     searches tokens individually (not as full "word blocks") for duplicates
     
@@ -473,7 +473,7 @@ def countToken(possibilities):
 # This is done first, because the characters are still important here.
 # After this, they are removed (for names, GeVo, etc.)
 
-def vnrFinden(document):
+def vnrFind(document):
     '''
     searches typical positions for insurance numbers
     
@@ -485,10 +485,10 @@ def vnrFinden(document):
                  'Nr.:', 'Nr', 'VNR', 'VNR:', 'Versicherungsnummer:', 
                  'VSNR:', 'VSNR', 'VSNR.', 'VSNR,','VSNR.:']
     
-    return findeFunc(document, vnr_token, 2)
+    return findFunc(document, vnr_token, 2)
 
 
-def vnrBauen(document):
+def vnrBuild(document):
     '''
     tries to construct the VNR and stops when it ends
     
@@ -496,7 +496,7 @@ def vnrBauen(document):
     
     Outputs:    possible VNRs
     '''
-    possibilities = vnrFinden(document)
+    possibilities = vnrFind(document)
     comp_vector = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '/', '.',
                   ',', '-', '|']
     new_poss = possibilities # keep the same structure as possibilities
@@ -525,7 +525,7 @@ def vnrBauen(document):
 
 
 
-def searchZahlenzeichenketten(document):
+def searchNumbersSignChain(document):
     '''
     finds numeric character strings (with the characters and digits from comp_vector)
     in a document
@@ -550,21 +550,21 @@ def searchZahlenzeichenketten(document):
                 break;
             elif (j == (len(token) - 1)):
                 isdig.append(True)
-    numbind = myGleich(isdig, True)
+    numbind = myEqual(isdig, True)
     numbertoken = np.array(docsplit)[numbind]
     return(numbertoken, numbind)
 
 def searchVNR(document):
     '''
     finds VNRs by combining numeric tokens from 
-    searchZahlenzeichenketten
+    searchNumbersSignChain
     
     Inputs:     document - non-tokenized document
     
     Outputs:    nt - 
 
     '''
-    numbertoken, numbind = searchZahlenzeichenketten(document)
+    numbertoken, numbind = searchNumbersSignChain(document)
     isnext = []
     for i in range(len(numbind) - 1):
         if (numbind[i] + 1 == numbind[i + 1]):
@@ -580,7 +580,7 @@ def searchVNR(document):
     return(nt)
 
 # compares the VNRs
-def vnrVergleich(document):
+def vnrCompare(document):
     # checks
     '''
     compares the VNRs 
@@ -591,7 +591,7 @@ def vnrVergleich(document):
                 'no VNR found' (prints that, stores None for the latter cases)
     '''
     try: 
-        poss_vnr = vnrBauen(document)
+        poss_vnr = vnrBuild(document)
         vnr = poss_vnr[0]
         equal = [None] * len(poss_vnr)
         for i in range(len(poss_vnr)):
@@ -637,7 +637,7 @@ def delPuncts(doc_list):
 
 ### convert all letters to lowercase =========================================
 
-def machLowercase(doc_list):
+def doLowercase(doc_list):
     # checks
     '''
     converts all letters to lowercase
@@ -654,7 +654,7 @@ def machLowercase(doc_list):
 
 ### Name ======================================================================
 
-def namenFinden(document):
+def findNames(document):
     '''
     searches typical positions for names
     
@@ -670,7 +670,7 @@ def namenFinden(document):
     # since the name is often at the beginning of the letterhead:
     pos12 = document_tok[0:2]
     m = 2
-    poss_names = findeFunc(document_lower, names_token, m)
+    poss_names = findFunc(document_lower, names_token, m)
     poss_names.append(pos12)
     todel = []
     # loop over all possible names to remove email addresses and numbers
@@ -702,7 +702,7 @@ def namenFinden(document):
         j = j + 1
     return poss_names
 
-def nameVergleich(document):
+def compareNames(document):
     '''
     CURRENTLY ONE OF THE MOST FREQUENT NAMES IS SELECTED (THE FIRST ONE)
     PROBLEMS: DIFFERENT SPELLINGS; NAME OCCURS ONLY ONCE
@@ -712,12 +712,12 @@ def nameVergleich(document):
     Outputs: a possible name
     '''
     try:
-        names_vec = namenFinden(document)
+        names_vec = findNames(document)
         counter = []
         for i in range(len(names_vec)):
             counter.append(names_vec.count(names_vec[i]))
         max_count = max(counter)
-        res = myGleich(counter, max_count)
+        res = myEqual(counter, max_count)
         if len(names_vec[res[0]][0]) > 0:
             a_max = names_vec[res[0]]
         else:
@@ -728,7 +728,7 @@ def nameVergleich(document):
 
 ### GeVo ======================================================================
 
-def KFindenSimple(document, c_words):
+def CFindSimple(document, c_words):
     '''
     searches for words that indicate a cancellation and classifies into
     cancellation or non-cancellation
@@ -747,7 +747,7 @@ def KFindenSimple(document, c_words):
     return(doc_GeVo)
 
 
-def gevoFinden(document, c_words, nc_words, pos = 'C', neg = 'N'):
+def gevoFind(document, c_words, nc_words, pos = 'C', neg = 'N'):
     '''
     searches for words that indicate a cancellation and classifies into
     cancellation or non-cancellation
@@ -784,7 +784,7 @@ def gevoFinden(document, c_words, nc_words, pos = 'C', neg = 'N'):
 
 ### Reason =====================================================================
 
-def grundFinden(document):
+def reasonFind(document):
     '''
     searches for words that describe a reason and assigns
     corresponding categories
@@ -814,7 +814,7 @@ def grundFinden(document):
     return doc_reason
 
 
-def grundVergleich(document):
+def reasonCompare(document):
     '''
     determines which reason appears most frequently in a document
     and how often each reason occurs
@@ -827,7 +827,7 @@ def grundVergleich(document):
                 res_tab - dictionary with frequencies of each reason
     '''
     document_lower = delPunct(document).lower()
-    poss_reasons = grundFinden(document_lower)
+    poss_reasons = reasonFind(document_lower)
     res = defaultdict(int)
     for i in poss_reasons:
         res[i] += 1
@@ -841,7 +841,7 @@ def grundVergleich(document):
     poss_reasons = max(freqs)
     
     if poss_reasons > 0:
-        reason = freq[myGleich(freqs, poss_reasons)[0]]
+        reason = freq[myEqual(freqs, poss_reasons)[0]]
         if sum(freqs) == poss_reasons:
             return reason
         else:
@@ -851,7 +851,7 @@ def grundVergleich(document):
 
 ### Corona ====================================================================
 
-def covidFinden(document):
+def covidFind(document):
     # checks
     '''
     checks whether words like Corona, covid, etc. occur
@@ -866,11 +866,11 @@ def covidFinden(document):
     document_lower = delPunct(document).lower()
     res = []
     for i in range(len(covid_token)):
-        res += searchIndizes(document_lower, covid_token[i]) 
+        res += searchIndices(document_lower, covid_token[i]) 
     return res
 
 
-def covidVergleich(document):
+def covidCompare(document):
     
     '''
     returns TRUE if a COVID-related word occurs (or multiple), and FALSE
@@ -881,7 +881,7 @@ def covidVergleich(document):
     Outputs:    TRUE/FALSE
     '''
     document_lower = delPunct(document).lower()
-    res = covidFinden(document_lower)
+    res = covidFind(document_lower)
     if len(res) > 0:
         return True
     else:
@@ -892,7 +892,7 @@ def covidVergleich(document):
 # =============================================================================
 
 
-def getHauptteil(document):
+def getMainPart(document):
     '''
     extracts the main body of a document
     THIS NO LONGER DOES THAT BECAUSE IT DOES NOT MAKE SENSE
@@ -908,13 +908,13 @@ def getHauptteil(document):
     res = document_lower
     return res
 
-def getHauptteile(dok_list):
+def getMainParts(dok_list):
     '''
-    applies getHauptteil to doc_list
+    applies getMainPart to doc_list
     '''
     new_list = []
     for i in doc_list:
-        new_list.append(getHauptteil(i))
+        new_list.append(getMainPart(i))
     return new_list
 
 # =============================================================================
@@ -937,12 +937,12 @@ def getInfos(document):
                 covid
                 text body
     '''
-    name = nameVergleich(document)
-    vnr = vnrVergleich(document)
-    gevo = gevoFinden(document, ['kündigung', 'kündige', 'kündigen'],
+    name = compareNames(document)
+    vnr = vnrCompare(document)
+    gevo = gevoFind(document, ['kündigung', 'kündige', 'kündigen'],
                       ['beitragsfreistellung', 'beitragspause', 'erhöhung'])
-    covid = covidVergleich(document)
-    textpart = ' '.join(getHauptteil(document).split())
+    covid = covidCompare(document)
+    textpart = ' '.join(getMainPart(document).split())
     Infos = [name, vnr, gevo, covid, textpart]
     return Infos
 
@@ -962,7 +962,7 @@ def createTable(doc_list):
      
 ### write table to Excel ======================================================
 
-def tabelledocument(doc_list, filename):
+def tableDocument(doc_list, filename):
     '''
     creates an Excel table with the given information
     
@@ -1065,7 +1065,7 @@ def getStem(texts):
             txt_stem.append('nan')
     return(txt_stem)
 
-def delWortvector(document, wordvector):
+def delWordVector(document, wordvector):
     '''
     removes all words contained in a given vector from a document
     
@@ -1093,7 +1093,7 @@ def delNumbers(document):
 
     '''
     numbers = list('0123456789')  
-    main = getHauptteil(document)
+    main = getMainPart(document)
     n = len(main.split())
     output = []
     for i in range(n):
@@ -1137,7 +1137,7 @@ def getTokenCount(vect, X_train, name):
     count_DF = pd.DataFrame(data = [token, count], index = ['token', name]).T
     return count_DF
 
-def delSelteneWoerter(vect, X_train_C, X_train_NC, p, C_len_train, NC_len_train):
+def delRareWords(vect, X_train_C, X_train_NC, p, C_len_train, NC_len_train):
     
     count_DF_C = getTokenCount(vect, X_train_C, 'count C')
     count_DF_NC = getTokenCount(vect, X_train_NC, 'count NC')
@@ -1156,7 +1156,7 @@ def delSelteneWoerter(vect, X_train_C, X_train_NC, p, C_len_train, NC_len_train)
     
     return(keep_token, new_df)
 
-def delSelteneWoerter2(vect, X_train_J, X_train_F, X_train_C, X_train_R, X_train_D, p, y_train):
+def delRareWords2(vect, X_train_J, X_train_F, X_train_C, X_train_R, X_train_D, p, y_train):
     
 
     count_DF_J = getTokenCount(vect, X_train_J, 'count J')
@@ -1172,11 +1172,11 @@ def delSelteneWoerter2(vect, X_train_J, X_train_F, X_train_C, X_train_R, X_train
     gem_df = gem_4    
     gem_df = gem_df.fillna(0)
     
-    J_len = len(myGleich(y_train, 'J'))
-    F_len = len(myGleich(y_train, 'F'))
-    C_len = len(myGleich(y_train, 'C'))
-    R_len = len(myGleich(y_train, 'R'))
-    D_len = len(myGleich(y_train, 'D'))
+    J_len = len(myEqual(y_train, 'J'))
+    F_len = len(myEqual(y_train, 'F'))
+    C_len = len(myEqual(y_train, 'C'))
+    R_len = len(myEqual(y_train, 'R'))
+    D_len = len(myEqual(y_train, 'D'))
     
     keep_J = gem_df['token'][gem_df['count J'] > (p * J_len)]
     keep_F = gem_df['token'][gem_df['count F'] > (p * F_len)]
@@ -1231,7 +1231,7 @@ def myNotIn(vector, partvector):
     return(newvec)
 
 
-def delWenige(countvector, count, token_vec):
+def delLess(countvector, count, token_vec):
     '''
     removes from a vector all words that occur less than or equal to "anzahl"
     times and returns which words from token_vek remain, i.e. those that occur
@@ -1247,7 +1247,7 @@ def delWenige(countvector, count, token_vec):
     '''
     dellist = []
     for i in range(count):
-        dellist += myGleich(countvector, i + 1)
+        dellist += myEqual(countvector, i + 1)
     
     keep = myNotIn(range(len(countvector)), dellist)
     
@@ -1272,7 +1272,7 @@ def getTFIDF(tf):
     
     for j in range(J):
         # number of documents where the term is NOT present
-        notpres = len(myGleich(tf_array[:,j],0))
+        notpres = len(myEqual(tf_array[:,j],0))
         df.append(J - notpres)
     
     idf = []
@@ -1367,7 +1367,7 @@ def createWC(txt, sw, name, mw = 200):
     os.chdir(r'W:\Sonder\lva-93300\Schriftstücke\Output\Wordclouds')
     cloud.to_file(name)
 
-def getHäufigeWörter(txt, number = 200):
+def getFreqWords(txt, number = 200):
          
     word_cloud_dict = Counter(' '.join(txt).split())
     bigrams = [' '.join(b) for l in [' '.join(txt)] for b in zip(l.split(' ')[:-1], l.split(' ')[1:])]
@@ -1386,7 +1386,7 @@ def getHäufigeWörter(txt, number = 200):
     
     return(freq_sl, mcwords_bi)
 
-def getHäufigeWörtermitSW(txt, numberw, numberbi):
+def getFreqWordsWithSW(txt, numberw, numberbi):
     word_cloud_dict = Counter(' '.join(txt).split())
     bigrams = [' '.join(b) for l in [' '.join(txt)] for b in zip(l.split(' ')[:-1], l.split(' ')[1:])]
     word_cloud_dict_bi = Counter(bigrams)
@@ -1396,7 +1396,7 @@ def getHäufigeWörtermitSW(txt, numberw, numberbi):
     return(freq, freq_bi)
     
     
-def getAnzahlen(compwordvec, class1, class2):
+def getAmounts(compwordvec, class1, class2):
     incl1 = []
     for i in compwordvec:
         count = 0
@@ -1435,10 +1435,10 @@ def getAnzahlen(compwordvec, class1, class2):
 
 
 
-def getWerte(c_words, nc_words, Xtr, ytr, positive = 'C', negative = 'N'):
+def getValues(c_words, nc_words, Xtr, ytr, positive = 'C', negative = 'N'):
     ypred = []
     for i in range(len(Xtr)):
-        ypred.append(gevoFinden(Xtr[i], c_words, nc_words, pos = positive, neg = negative))
+        ypred.append(gevoFind(Xtr[i], c_words, nc_words, pos = positive, neg = negative))
     
     if positive == 1:
         cm_wrong = confusion_matrix(ytr, ypred)
@@ -1455,7 +1455,7 @@ def getWerte(c_words, nc_words, Xtr, ytr, positive = 'C', negative = 'N'):
     accuracy = (cm[0][0] + cm[1][1])/len(ypred)
     return(cm, sensi, speci, accuracy, ypred)
 
-def getWerteKlassi(ytr, ypred):
+def getValuesClass(ytr, ypred):
     '''
     for classes 0 and 1, where 0 is the POSITIVE CLASS
     
@@ -1492,7 +1492,7 @@ def getBestCombinations(words, Xtr, ytr, gevo1, gevo2 = 'C'):
     for i in range(len(combinations)):
         combis.append(list(np.array(words)[list(list(combinations)[i])]))
         if gevo2 == 'R':
-            [cm, a, b, c, d] = getWerte(combis[i], [], Xtr, ytr, gevo1, gevo2)
+            [cm, a, b, c, d] = getValues(combis[i], [], Xtr, ytr, gevo1, gevo2)
             cm_new = np.array([[1, 1], [1, 1]])
             cm_new[0][0] = cm[1][0]
             cm_new[1][1] = cm[0][1]
@@ -1500,11 +1500,11 @@ def getBestCombinations(words, Xtr, ytr, gevo1, gevo2 = 'C'):
             cm_new[1][0] = cm[0][0]
             cm_fin = cm_new
         else:
-            [cm_fin, a, b, c, d] = getWerte(combis[i], [], Xtr, ytr, gevo1, gevo2)
+            [cm_fin, a, b, c, d] = getValues(combis[i], [], Xtr, ytr, gevo1, gevo2)
         cms.append(cm_fin)
         frichtig.append(cms[i][0][0])
         
-    best_combis = myGleich(fright, max(fright))
+    best_combis = myEqual(fright, max(fright))
 
     np.array(kombis)[best_combis]
 
@@ -1512,7 +1512,7 @@ def getBestCombinations(words, Xtr, ytr, gevo1, gevo2 = 'C'):
     for i in best_combis:
         kright.append(cms[i][1][1])
         
-    best_combis_2 = myGleich(kright, max(kright))
+    best_combis_2 = myEqual(kright, max(kright))
 
     res = np.array(combis)[list(np.array(best_combis)[best_combis_2])]
     return res
@@ -1550,23 +1550,23 @@ def RFAll(dtm_train, dtm_test, y_train, y_test, X_test_ind, neval = 100,
     mydf.columns = ['Document', 'true class', 'probability positive']
     mydf = mydf.sort_values('Document')
     if threshold_RF == False:
-        [cm, sensi, speci, accuracy] = getWerteKlassi(y_test, RF_pred)
+        [cm, sensi, speci, accuracy] = getValuesClass(y_test, RF_pred)
         y_pred = RF_pred
     else:
         y_pred = getPred(RF_probs[:,1], threshold_RF)
-        [cm, sensi, speci, accuracy] = getWerteKlassi(y_test, y_pred)
+        [cm, sensi, speci, accuracy] = getValuesClass(y_test, y_pred)
     
     return(cm, sensi, speci, accuracy, y_pred, mydf)
 
 
 
-def ergtable(y_test, y_pred, true_probs):
+def resTable(y_test, y_pred, true_probs):
     '''
     returns a clear results table for the RF
     
     Inputs:     y_test
                 y_pred
-                true_probs (partly from rfBerechnen)
+                true_probs (partly from rfCalc)
     
     Outputs:    res - 
 
@@ -1576,7 +1576,7 @@ def ergtable(y_test, y_pred, true_probs):
     # res['probability'] = true_probs
     res['predicted label'] = y_pred
     res['correct'] = [0] * len(y_test)
-    res['correct'][myvectorGleich(y_test,y_pred)] = 1
+    res['correct'][myVectorEqual(y_test,y_pred)] = 1
     return(res)
 
 def getPred(probs, threshold):
@@ -1630,13 +1630,13 @@ def SVMAll(dtm_train, dtm_test, y_train, y_test, X_test_ind, threshold_SVM = Fal
     mydf.columns = ['Document', 'true class', 'probability positive']
     mydf = mydf.sort_values('Document')
 
-    [cm, sensi, speci, accuracy] = getWerteKlassi(y_test, SVM_pred)
+    [cm, sensi, speci, accuracy] = getValuesClass(y_test, SVM_pred)
     if threshold_SVM == False:
-        [cm, sensi, speci, accuracy] = getWerteKlassi(y_test, SVM_pred)
+        [cm, sensi, speci, accuracy] = getValuesClass(y_test, SVM_pred)
         y_pred = SVM_pred
     else:
         y_pred = getPred(SVM_probs[1], threshold_SVM)
-        [cm, sensi, speci, accuracy] = getWerteKlassi(y_test, y_pred)
+        [cm, sensi, speci, accuracy] = getValuesClass(y_test, y_pred)
 
     return(cm, sensi, speci, accuracy, y_pred, mydf)
 
@@ -1714,7 +1714,7 @@ def ROCFunc(y_test, y_pred, name, xlab = "1 - Specificity", ylab = "Sensitivity"
     return(auc)
 
 
-def HistFuncK(data, name, xlab = "Probability of termination", ylab = "Number of terminations"):
+def HistFuncC(data, name, xlab = "Probability of termination", ylab = "Number of terminations"):
     '''
     computes ROC curve
     
@@ -1742,7 +1742,7 @@ def HistFuncK(data, name, xlab = "Probability of termination", ylab = "Number of
     plt.show()
     return()
 
-def HistFuncNK(data, name, xlab = "Probability of termination", ylab = "Number of other documents"):
+def HistFuncNC(data, name, xlab = "Probability of termination", ylab = "Number of other documents"):
     '''
     computes ROC curve
     
@@ -1789,7 +1789,7 @@ def GiniFunc(data, name, xlab = "Token sorted by Gini index", ylab = "Gini index
     return()
 
 
-def AnteileFunc(data, name, xlab = "Token sorted by differences", ylab = "Difference"):
+def PortionFunc(data, name, xlab = "Token sorted by differences", ylab = "Difference"):
     matplotlib.rcParams['font.family'] = 'serif'
     matplotlib.rcParams['font.style'] = 'normal'
     plt.figure(figsize=(7, 4), dpi=300)
@@ -1833,9 +1833,9 @@ def RFcomplete(reason, dtm_train, dtm_test, y_train, y_test, X_train_ind, X_test
         name6 = reason + 'roc_RF_test_kl.png'
               
     probs_pos = mydf_train['probability positive'][mydf_train['true class'] == 1]
-    HistFuncK(probs_pos, name1)
+    HistFuncC(probs_pos, name1)
     probs_neg = np.sort(mydf_train['probability positive'][mydf_train['true class'] == 0])
-    HistFuncNK(probs_neg, name2)
+    HistFuncNC(probs_neg, name2)
     
     ROCFunc(y_train, mydf_train['probability positive'], name3) 
 
@@ -1852,16 +1852,16 @@ def RFcomplete(reason, dtm_train, dtm_test, y_train, y_test, X_train_ind, X_test
     
     y_pred_train_new = getPred(mydf_train['probability positive'], ts)
     [cm_train_new, sensi_train_new, speci_train_new,
-     accuracy_train_new] = getWerteKlassi(y_train, y_pred_train_new)
+     accuracy_train_new] = getValuesClass(y_train, y_pred_train_new)
 
     [cm_test, sensi_test, speci_test, accuracy_test, y_pred_test, 
      mydf_test] = RFAll(dtm_train, dtm_test, y_train, y_test, X_test_ind,
                            threshold_RF = ts)
                            
     probs_pos = mydf_test['probability positive'][mydf_test['true class'] == 1]
-    HistFuncK(probs_pos, name4)
+    HistFuncC(probs_pos, name4)
     probs_neg = np.sort(mydf_test['probability positive'][mydf_test['true class'] == 0])
-    HistFuncNK(probs_neg, name5)
+    HistFuncNC(probs_neg, name5)
     
     ROCFunc(y_test, mydf_test['probability positive'], name6) 
 
@@ -1891,9 +1891,9 @@ def SVMcomplete(reason, dtm_train, dtm_test, y_train, y_test, X_train_ind, X_tes
         name6 = reason + '_roc_SVM_test_kl.png'
               
     probs_pos = mydf_train['probability positive'][mydf_train['true class'] == 1]
-    HistFuncK(probs_pos, name1)
+    HistFuncC(probs_pos, name1)
     probs_neg = np.sort(mydf_train['probability positive'][mydf_train['true class'] == 0])
-    HistFuncNK(probs_neg, name2)
+    HistFuncNC(probs_neg, name2)
     
     ROCFunc(y_train, mydf_train['probability positive'], name3) 
 
@@ -1910,16 +1910,16 @@ def SVMcomplete(reason, dtm_train, dtm_test, y_train, y_test, X_train_ind, X_tes
     
     y_pred_train_new = getPred(mydf_train['probability positive'], ts)
     [cm_train_new, sensi_train_new, speci_train_new,
-     accuracy_train_new] = getWerteKlassi(y_train, y_pred_train_new)
+     accuracy_train_new] = getValuesClass(y_train, y_pred_train_new)
 
     [cm_test, sensi_test, speci_test, accuracy_test, y_pred_test, 
      mydf_test] = SVMAll(dtm_train, dtm_test, y_train, y_test, X_test_ind,
                            threshold_SVM = ts)
                            
     probs_pos = mydf_test['probability positive'][mydf_test['true class'] == 1]
-    HistFuncK(probs_pos, name4)
+    HistFuncC(probs_pos, name4)
     probs_neg = np.sort(mydf_test['probability positive'][mydf_test['true class'] == 0])
-    HistFuncNK(probs_neg, name5)
+    HistFuncNC(probs_neg, name5)
     
     ROCFunc(y_test, mydf_test['probability positive'], name6) 
 
@@ -1932,7 +1932,7 @@ def SVMcomplete(reason, dtm_train, dtm_test, y_train, y_test, X_train_ind, X_tes
 
                  
     
-def getEineKlass(x_true, fpr, jpr, rpr, dpr, cpr):
+def getOneClass(x_true, fpr, jpr, rpr, dpr, cpr):
     f_x = list(set(fpr).intersection(x_true))
     j_x = list(set(jpr).intersection(x_true))
     r_x = list(set(rpr).intersection(x_true))
@@ -1941,29 +1941,29 @@ def getEineKlass(x_true, fpr, jpr, rpr, dpr, cpr):
     all_x = [len(f_x), len(j_x), len(r_x), len(d_x), len(c_x)]
     return(all_x)
 
-def getErgebnisse(y_pred_F, y_pred_J, y_pred_R, y_pred_D, X_test, y_test):
+def getResults(y_pred_F, y_pred_J, y_pred_R, y_pred_D, X_test, y_test):
 
-    f_pred = myGleich(y_pred_F, 1) + myGleich(y_pred_F, 'F')
-    j_pred = myGleich(y_pred_J, 1) + myGleich(y_pred_J, 'J')
-    r_pred = myGleich(y_pred_R, 1) + myGleich(y_pred_R, 'R')
-    d_pred = myGleich(y_pred_D, 1) + myGleich(y_pred_D, 'D')
+    f_pred = myEqual(y_pred_F, 1) + myEqual(y_pred_F, 'F')
+    j_pred = myEqual(y_pred_J, 1) + myEqual(y_pred_J, 'J')
+    r_pred = myEqual(y_pred_R, 1) + myEqual(y_pred_R, 'R')
+    d_pred = myEqual(y_pred_D, 1) + myEqual(y_pred_D, 'D')
     c_pred = list(set(range(len(X_test))).difference(f_pred + j_pred + r_pred + d_pred))   
-    f_true = myGleich(y_test, 'F') 
-    j_true = myGleich(y_test, 'J') 
-    r_true = myGleich(y_test, 'R') 
-    d_true = myGleich(y_test, 'D') 
-    c_true = myGleich(y_test, 'C') + myGleich(y_test, 'O')
+    f_true = myEqual(y_test, 'F') 
+    j_true = myEqual(y_test, 'J') 
+    r_true = myEqual(y_test, 'R') 
+    d_true = myEqual(y_test, 'D') 
+    c_true = myEqual(y_test, 'C') + myEqual(y_test, 'O')
     
     resdf = pd.DataFrame([[0] * 5] * 5)
     resdf = setColRowNames(resdf, 
                             ['F true', 'J true', 'R true', 'D true', 'C true'],
                             ['F predicted', 'J predicted', 'R predicted', 'D predicted', 'C predicted'])
     
-    resdf['F true'] = getEineKlass(f_true, f_pred, j_pred, r_pred, d_pred, c_pred)
-    resdf['J true'] = getEineKlass(j_true, f_pred, j_pred, r_pred, d_pred, c_pred)
-    resdf['R true'] = getEineKlass(r_true, f_pred, j_pred, r_pred, d_pred, c_pred)
-    resdf['D true'] = getEineKlass(d_true, f_pred, j_pred, r_pred, d_pred, c_pred)
-    resdf['C true'] = getEineKlass(c_true, f_pred, j_pred, r_pred, d_pred, c_pred)
+    resdf['F true'] = getOneClass(f_true, f_pred, j_pred, r_pred, d_pred, c_pred)
+    resdf['J true'] = getOneClass(j_true, f_pred, j_pred, r_pred, d_pred, c_pred)
+    resdf['R true'] = getOneClass(r_true, f_pred, j_pred, r_pred, d_pred, c_pred)
+    resdf['D true'] = getOneClass(d_true, f_pred, j_pred, r_pred, d_pred, c_pred)
+    resdf['C true'] = getOneClass(c_true, f_pred, j_pred, r_pred, d_pred, c_pred)
     
     resdf = resdf.T
     return(resdf)
@@ -1981,7 +1981,7 @@ def delWords():
 def delNumbersNames():
     return 0
 
-def delSeltene():
+def delRare():
     return 0
 
 def countFunc():
@@ -1990,13 +1990,13 @@ def countFunc():
 def giniCalcAll():
     return 0
 
-def rfBerechnen():
+def rfCalc():
     return 0
 
-def gevoVergleich():
+def gevoCompare():
     return 0
 
-def kriegGevo():
+def getGevo():
     return 0
 
 def getWC():
