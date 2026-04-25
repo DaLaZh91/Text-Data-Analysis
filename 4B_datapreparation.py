@@ -13,7 +13,7 @@ from sklearn.model_selection import train_test_split
 from datetime import datetime
 
 os.chdir(r'W:\your_folder\Python')
-from Funktionen import *
+from functions import *
 
 # =============================================================================
 # Load texts
@@ -53,7 +53,7 @@ stop_words_stem = getStem(stop_words)
 texts_sl = []
 for i in range(len(my_stem)):
     try:
-        texts_sl.append(delWortvektor(my_stem[i], stop_words_stem))
+        texts_sl.append(delWordVector(my_stem[i], stop_words_stem))
     except:
         texts_sl.append('nan')
 
@@ -95,19 +95,19 @@ X_test = X_test[2:(len(X_test) - 2)].split(sep="', '")
 X_train = str(list(np.array(texts_nl)[X_train_ind]))
 X_train = X_train[2:(len(X_train) - 2)].split(sep="', '")
 
-X_train_O = str(list(np.array(X_train)[myGleich(y_train, 'O')]))
+X_train_O = str(list(np.array(X_train)[myEqual(y_train, 'O')]))
 X_train_O = X_train_O[2:(len(X_train_O) - 2)].split(sep="', '")
 
-X_train_F = str(list(np.array(X_train)[myGleich(y_train, 'F')]))
+X_train_F = str(list(np.array(X_train)[myEqual(y_train, 'F')]))
 X_train_F = X_train_F[2:(len(X_train_F) - 2)].split(sep="', '")
 
-X_train_D = str(list(np.array(X_train)[myGleich(y_train, 'D')]))
+X_train_D = str(list(np.array(X_train)[myEqual(y_train, 'D')]))
 X_train_D = X_train_D[2:(len(X_train_D) - 2)].split(sep="', '")
 
-X_train_R = str(list(np.array(X_train)[myGleich(y_train, 'R')]))
+X_train_R = str(list(np.array(X_train)[myEqual(y_train, 'R')]))
 X_train_R = X_train_R[2:(len(X_train_R) - 2)].split(sep="', '")
 
-X_train_J = str(list(np.array(X_train)[myGleich(y_train, 'J')]))
+X_train_J = str(list(np.array(X_train)[myEqual(y_train, 'J')]))
 X_train_J = X_train_J[2:(len(X_train_J) - 2)].split(sep="', '")
 
 # =============================================================================
@@ -116,7 +116,7 @@ X_train_J = X_train_J[2:(len(X_train_J) - 2)].split(sep="', '")
 
 vect = CountVectorizer() 
 
-[keep_token, df_single_1] = delSelteneWoerter2(
+[keep_token, df_single_1] = delRareWords2(
     vect, X_train_O, X_train_F, X_train_D, X_train_R, X_train_J, 0.01, y_train
 )
 
@@ -144,19 +144,19 @@ X_test = X_test[2:(len(X_test) - 2)].split(sep="', '")
 X_train = str(list(np.array(texts_final)[X_train_ind]))
 X_train = X_train[2:(len(X_train) - 2)].split(sep="', '")
 
-X_train_O = str(list(np.array(X_train)[myGleich(y_train, 'O')]))
+X_train_O = str(list(np.array(X_train)[myEqual(y_train, 'O')]))
 X_train_O = X_train_O[2:(len(X_train_O) - 2)].split(sep="', '")
 
-X_train_F = str(list(np.array(X_train)[myGleich(y_train, 'F')]))
+X_train_F = str(list(np.array(X_train)[myEqual(y_train, 'F')]))
 X_train_F = X_train_F[2:(len(X_train_F) - 2)].split(sep="', '")
 
-X_train_D = str(list(np.array(X_train)[myGleich(y_train, 'D')]))
+X_train_D = str(list(np.array(X_train)[myEqual(y_train, 'D')]))
 X_train_D = X_train_D[2:(len(X_train_D) - 2)].split(sep="', '")
 
-X_train_R = str(list(np.array(X_train)[myGleich(y_train, 'R')]))
+X_train_R = str(list(np.array(X_train)[myEqual(y_train, 'R')]))
 X_train_R = X_train_R[2:(len(X_train_R) - 2)].split(sep="', '")
 
-X_train_J = str(list(np.array(X_train)[myGleich(y_train, 'J')]))
+X_train_J = str(list(np.array(X_train)[myEqual(y_train, 'J')]))
 X_train_J = X_train_J[2:(len(X_train_J) - 2)].split(sep="', '")
 
 # =============================================================================
@@ -164,12 +164,12 @@ X_train_J = X_train_J[2:(len(X_train_J) - 2)].split(sep="', '")
 # =============================================================================
 
 vect = CountVectorizer() 
-[keep_single, df_single] = delSelteneWoerter2(
+[keep_single, df_single] = delRareWords2(
     vect, X_train_O, X_train_F, X_train_D, X_train_R, X_train_J, 0.005, y_train
 )
 
 vect2 = CountVectorizer(ngram_range=(2, 2)) 
-[keep_bigram, df_bigram] = delSelteneWoerter2(
+[keep_bigram, df_bigram] = delRareWords2(
     vect2, X_train_O, X_train_F, X_train_D, X_train_R, X_train_J, 0.005, y_train
 )
 
@@ -190,11 +190,11 @@ dtm_tr = dtm
 # 5. Apply Gini index and keep most important tokens (training data)
 # =============================================================================
 
-O_len = len(myGleich(y_train, 'O'))
-F_len = len(myGleich(y_train, 'F'))
-D_len = len(myGleich(y_train, 'D'))
-R_len = len(myGleich(y_train, 'R'))
-J_len = len(myGleich(y_train, 'J'))
+O_len = len(myEqual(y_train, 'O'))
+F_len = len(myEqual(y_train, 'F'))
+D_len = len(myEqual(y_train, 'D'))
+R_len = len(myEqual(y_train, 'R'))
+J_len = len(myEqual(y_train, 'J'))
 
 class_distribution = [O_len, F_len, D_len, R_len, J_len]
 
