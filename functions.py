@@ -1,98 +1,92 @@
-
-# import os
-# os.chdir(r'W:\Sonder\lva-93300\Masterarbeiten\Marie Punsmann\Python')
-# from Funktionen import *
-
 # =============================================================================
-# Pakete laden
+# Loading packages
 # =============================================================================
 
-import pandas as pd # zB für die tf-idf Matrix
+import pandas as pd # e.g. for the tf-idf matrix
 import numpy as np
 import random
-import os # zum setzen des working directories
-import pytesseract as py # fuer die OCR
+import os # for the working directories
+import pytesseract as py # for OCR
 py.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
-import pikepdf # zum speichern der pdf dateien als ungeschützte dateien
+import pikepdf # for saving PDF files as unprotected files
 from pdf2image import convert_from_path #, convert_from_bytes
 # import dill
 from datetime import datetime
 from Levenshtein import distance as lev
-from collections import defaultdict # für die Häufigkeiten der GeVos
-import collections as cl # für häufigkeiten auch
-import xlsxwriter # um in excel tabelle zu schreiben
-from wordcloud import WordCloud #fuer wordclouds
+from collections import defaultdict # for the frequencies of the GeVos
+import collections as cl # also for frequencies
+import xlsxwriter # to write into Excel tables
+from wordcloud import WordCloud # for word clouds
 import itertools
 from collections import Counter
-import snowballstemmer # fürs stemming
-from stop_words import get_stop_words #fuer die deutschen stoppwords
-from sklearn.ensemble import RandomForestClassifier # für den Random Forest
+import snowballstemmer # for stemming
+from stop_words import get_stop_words # for German stop words
+from sklearn.ensemble import RandomForestClassifier # for Random Forest
 from sklearn.metrics import confusion_matrix
-from sklearn import svm # fuer svm
-import warnings # fuer svm 
+from sklearn import svm # for SVM
+import warnings # for SVM 
 from sklearn.ensemble import ExtraTreesClassifier # ET
 from sklearn import metrics # ROC 
 import matplotlib.pyplot as plt # ROC
 import matplotlib
 
 # =============================================================================
-# random.seed setzen, für den Fall dass es mal gebraucht wird 
+# set random.seed, in case it is needed
 # =============================================================================
 
 random.seed(1921)
 
 # =============================================================================
 # =============================================================================
-# # pdf einlesen + OCR (für 1_PDFs_konvertieren und 2_PDFs_auslesen)
+# # read PDFs + OCR (for 1_convert_PDFs and 2_read_PDFs)
 # =============================================================================
 # =============================================================================
 
 # =============================================================================
-# umspeichern von geschützten pdfs zu ungeschützten
+# saving protected PDFs as unprotected
 # =============================================================================
 
-def pdfUmspeichern(datei, datenordner, pdfordner):
+def pdfUmspeichern(file, datafolder, pdffolder):
     '''
-    speichert pdf "datei" um als ungeschützte pdf
+    saves PDF "file" as an unprotected PDF
     
-    Inputs:     datei - geschützte pdf Datei
-                datenordner - da liegt die geschützte pdf
-                pdfordner - zielordner für die ungeschützte pdf
+    Inputs:     file - protected PDF file
+                datafolder - folder where the protected PDF is located
+                pdffolder - target folder for the unprotected PDF
     
-    Outputs:    kein Output in python, ungeschützte pdf kommt in pdfordner
+    Outputs:    no output in Python, unprotected PDF is saved in pdffolder
     '''
-    os.chdir(datenordner)
-    pdf = pikepdf.open(datei, allow_overwriting_input=True)
-    os.chdir(pdfordner)
-    pdf.save(datei)
+    os.chdir(datafolder)
+    pdf = pikepdf.open(file, allow_overwriting_input=True)
+    os.chdir(pdffolder)
+    pdf.save(file)
     
 
-def vielUmspeichern(datenordner, pdfordner):
+def vielUmspeichern(datafolder, pdffolder):
     '''
-    speichert alle geschützen pdfs aus datenordner in geschützte pdfs in 
-    pdfordner um
+    saves all protected PDFs from datafolder as unprotected PDFs in 
+    pdffolder
     
-    Inputs:     datenordner - da liegen die geschützten pdfs
-                pdfordner - zielordner für die ungeschützten pdfs
+    Inputs:     datafolder - folder containing the protected PDFs
+                pdffolder - target folder for the unprotected PDFs
     
-    Outputs:    kein Output in python, ungeschützte pdfs kommen in pdfordner
+    Outputs:    no output in Python, unprotected PDFs are saved in pdffolder
     '''
-    for i in next(os.walk(datenordner))[2]:
-        pdfUmspeichern(i, datenordner, pdfordner)
-        
-# wird möglicherweise nicht mehr benötigt       
-def teilUmspeichern(trennung, path0, path1, path2):
+    for i in next(os.walk(datafolder))[2]:
+        pdfUmspeichern(i, datafolder, pdffolder)
+             
+def teilUmspeichern(separation, path0, path1, path2):
     '''
-    speichert die Daten aus path0 nach einer Trennung in path1 und path2 um
+    saves the data from path0 into path1 and path2 based on a split
 
-    Inputs:     trennung - vektor mit Namen der Dokumente, die in path1 sollen
-                path0 - ursprünglicher Dateipfad
-                path1 - gewünschter Dateipfad der ausgewählten Dokumente
-                path2 - gewünschter Dateipfad der nicht ausgewählten Dokumente
+    Inputs:     separation - vector with names of documents that should go to path1
+                path0 - original file path
+                path1 - target path for selected documents
+                path2 - target path for non-selected documents
             
-    Outputs:    keine, speichern in den Ordnern
+    Outputs:    none, files are saved in the respective folders
     '''
-    for i in trennung:
+    for i in separation:
         pdfUmspeichern(i, path0, path1)
       
     ges = []
@@ -100,55 +94,55 @@ def teilUmspeichern(trennung, path0, path1, path2):
         ges.append(i)
     
     for i in ges[0][2]:
-        if i not in trennung:
+        if i not in separation:
             pdfUmspeichern(i, path0, path2)
 
         
 # =============================================================================
-# umwandeln der pdfs zu bildern 
+# converting PDFs to images 
 # =============================================================================
         
-def getBild(datei, pdfordner):
+def getBild(file, pdffolder):
     '''
-    speichert ungeschützte pdf um als ppm Datei
+    saves an unprotected PDF as a ppm file
 
-    Inputs:     datei - ungeschützte pdf datei 
-                pdfordner - Ordner, in dem datei gespeichert ist
+    Inputs:     file - unprotected PDF file 
+                pdffolder - folder where the file is stored
     
-    Outputs:    kein output in python, ppm Datei wird in pdfordner gespeichert
+    Outputs:    no output in Python, ppm file is saved in pdffolder
                 
     '''
-    os.chdir(pdfordner)
-    im = convert_from_path(datei, 
+    os.chdir(pdffolder)
+    im = convert_from_path(file, 
                         poppler_path = r'C:\ProgramData\Anaconda3\pkgs\poppler-22.01.0-h24fffdf_2\Library\bin')
     return im
     
  
-def getBilder(pdfordner):
+def getBilder(pdffolder):
     '''
-    wendet getBild auf jede Datei im pdfordner an
+    applies getBild to each file in pdffolder
     
-    Inputs:      pdfordner - Ordner mit den Dateien, die umgewandelt werden sollen
+    Inputs:      pdffolder - folder with files to be converted
     
-    Outputs:    die Bilder
+    Outputs:    the images
     '''
-    bilder = []
-    for i in next(os.walk(pdfordner))[2]:
-        bilder.append(getBild(i, pdfordner))
-    return bilder   
+    pictures = []
+    for i in next(os.walk(pdffolder))[2]:
+        pictures.append(getBild(i, pdffolder))
+    return pictures   
 
 # =============================================================================
-# den text aus den bildern auslesen 
+# extracting text from the images 
 # =============================================================================
 
 
 def bildAuslesen(s):
     '''
-    liest für jedes bild in s den Text aus
+    extracts text from each image in s
     
-    Inputs:     s - Liste mit Bildern
+    Inputs:     s - list of images
     
-    Outputs:     s_text - Liste mit aus den Bildern ausgelesenen Texten
+    Outputs:     s_text - list of extracted texts from the images
     '''
     s_text = []
     for j in range(len(s)):
@@ -159,351 +153,333 @@ def bildAuslesen(s):
     return s_text
 
 
-def getText(pdfordner):
+def getText(pdffolder):
     '''
-    list Texte aus Dateien aus (Hintereinanderschaltung von getBilder und
+    extracts text from files (combination of getBilder and
                                 bildAuslesen)
 
-    Inputs:     pdfordner - Ordner mit den ungeschützten pdf Dateien
+    Inputs:     pdffolder - folder with unprotected PDF files
     
-    Outputs:    txt - Liste mit aus den Dateien ausgelesenen Texten
+    Outputs:    txt - list of extracted texts from the files
 
     '''
-    bilder = getBilder(pdfordner)
+    pictures = getBilder(pdffolder)
     txt = bildAuslesen(bilder)
     return txt
 
-# wird möglicherweise nicht mehr benötigt   
-# das ist eigentlich die getText, nur um die dauer erweitert (vielleicht
-# eher die getText weg und diese behalten, da diese in den weitern files
-# benutzt wird)
-def ordnerEinlesen(pdfordner):
+
+def ordnerEinlesen(pdffolder):
     '''
-    liest die Texte eines Ordners ein und gibt an, wie lange es dauert
+    reads the texts of a folder and returns how long it takes
     
-    Inputs:     pdfordner - Ordner mit den ungeschützten pdf Dateien
+    Inputs:     pdffolder - folder with unprotected PDF files
     
-    Outputs:    txt - Liste mit aus den Dateien ausgelesenen Texten
-                dauer - Zeit, die die Ausführung dieser Funktion dauert
+    Outputs:    txt - list of extracted texts from the files
+                dauer - time taken to execute this function
 
     '''
     start = datetime.now()
-    txt = getText(pdfordner)
-    ende = datetime.now()
-    dauer = ende - start
-    return txt, dauer
+    txt = getText(pdffolder)
+    end = datetime.now()
+    duration = end - start
+    return txt, duration
 
-def seitenZusammen(texte):
+def seitenZusammen(texts):
     '''
-    fügt mehrere Seiten zusammen
+    merges multiple pages
     
-    Inputs:      teste -     Liste mit mehreren Listen, jede Liste enthält ein 
-                            Dokument, können auch mehrseiteige Elemente sein
+    Inputs:      texts -     list of lists, each list contains a document,
+                            can also include multi-page elements
                     
-    Outputs:     neu_text -  Liste mit den einzelnen Dokumenten, bei mehreren 
-                            Seiten nicht mehr auf Seiten aufgeteilt
+    Outputs:     new_text -  list of individual documents, no longer split
+                            into pages
     '''
-    neu_text = []
-    for i in range(len(texte)):
-        neu_text.append(' '.join(texte[i]))
-    return neu_text
+    new_text = []
+    for i in range(len(texts)):
+        new_text.append(' '.join(texts[i]))
+    return new_text
 
 # =============================================================================
-# Duplikate finden
+# find duplicates
 # =============================================================================
 
-def findDuplicates(vektor):
+def findDuplicates(vector):
     '''
-    diese Funktion gibt für jedes Element des Vektors vor, wie oft es vorkommt
+    this function returns how often each element of the vector occurs
     
-    Inputs:     vektor - interessierender Vektor
+    Inputs:     vector - vector of interest
     
-    Outputs:    anzahlen - Häufigkeiten des vorkommens jedes Eintrages 
-                           (bspw wäre vektor: (1, 2, 1, 3, 3), dann wäre
-                            anzahlen: (2, 1, 2, 2, 2))
+    Outputs:    amounts - frequencies of occurrence of each entry 
+                           (e.g. if vector: (1, 2, 1, 3, 3), then
+                            amounts: (2, 1, 2, 2, 2))
     '''
-    anzahlen = [0] * len(vektor)
-    for i in range(len(vektor)):
-        anzahlen[i] = vektor.count(vektor[i])
-    return(anzahlen)
+    amounts = [0] * len(vector)
+    for i in range(len(vector)):
+        amounts[i] = vector.count(vector[i])
+    return(amounts)
 
-# TODO
-# Beschreibung schreiben
+
 def createDuplDict(txt):
     '''
     
     
     Inputs:     txt
     
-    Outputs:    vorkommen
+    Outputs:    occurs
 
     '''
-    dupl_vekt = findDuplicates(txt)
-    dupl_anzahl = []
+    dupl_vect = findDuplicates(txt)
+    dupl_amount = []
     i = 1
-    while sum(dupl_anzahl) < len(txt):
-        dupl_anzahl.append(len(myGleich(dupl_vekt, i)))
+    while sum(dupl_amount) < len(txt):
+        dupl_amount.append(len(myGleich(dupl_vect, i)))
         i += 1
-    vorkommen = dict(zip(range(1, i + 1), dupl_anzahl))
-    return(vorkommen)
+    occurs = dict(zip(range(1, i + 1), dupl_amount))
+    return(occurs)
 
 # =============================================================================
 # =============================================================================
-# # Textvorverarbeitung (für 3_Tabellenerstellung)
+# # Text preprocessing (for 3_table_creation)
 # =============================================================================
 # =============================================================================
 
-# Levenshtein Funktion
-# Die soll dafür sorgen, dass beim Vergleich zweier Namen oÄ die
-# Levenshtein Distanz berechnet wird, also dass man zB sagen kann, dass
-# das bei ner LD von 1 oder sowas wahrscheinlich das gleiche Wort ist, nur
-# dass da beim einlesen was schief gegangen ist, was auf jeden Fall passieren 
-# wird. Dann kann man zB sagen man nimmt immer den ersten als richtigen, wenn 
-# die LD so klein ist, dass man sagt es ist das gleiche, weil das vllt
-# am wslsten richtig geschrieben ist, beim zweiten vllt auch oft beim ersten
-# abgeschrieben, per Hand vllt am anfang am ordentlichsten etc.
+# Levenshtein function
+# This is intended to ensure that when comparing two names or similar,
+# the Levenshtein distance is calculated, so that one can say, for example,
+# that with an LD of 1 or so it is probably the same word, just that
+# something went wrong during reading, which will definitely happen.
+# Then, for example, one could always take the first as the correct one if
+# the LD is small enough to assume they are the same, because that one is
+# probably written correctly, the second might often be copied from the first,
+# written by hand, maybe the first one is the neatest, etc.
 
-# TODO  überall zum Vergleich nutzen, überlegen wie
 
 # =============================================================================
-# Infos aus Dokument auslesen
+# extract information from document
 # =============================================================================
 
-# Namen, VNR, Geschäftsvorgang, Coronaind
+# names, VNR, business transaction, corona indicator
 
-# unterschied zu vektor.vergleich(): gibt auch mehrere aus!
-def myGleich(vektor, vergleich):
-    # überprüft
+# difference to vector.vergleich(): also returns multiple results!
+def myGleich(vector, comparison):
+    # checks
     '''
-    überprüft ob das Wort vergleich in vektor vorkommt und wo
+    checks whether the word "comparison" occurs in "vector" and where
     
-    Inputs:  vektor 
-            vergleich - Wert, mit dem verglichen werden soll
+    Inputs:  vector 
+            comparison - value to compare against
             
-    Ouput:  erg - Indizes, an denen das Wort steht bzw "1" wenn Wort nicht 
-                    in dem Vektor vorkommt
+    Ouput:  res - indices where the word occurs or "1" if the word does not 
+                    occur in the vector
     '''
-    erg = [i for i in range(len(vektor)) if vektor[i] == vergleich]
-    return erg 
+    res = [i for i in range(len(vector)) if vector[i] == comparison]
+    return res 
 
 
-def myVektorGleich(vektor1, vektor2):
+def myvectorGleich(vector1, vector2):
     '''
-    überprüft für welche i vektor1[i] = vektor2[i]
+    checks for which i vector1[i] = vector2[i]
     
-    Inputs:     vektor1
-                vektor2
+    Inputs:     vector1
+                vector2
                 
-    Outputs:    erg - Indizes für die vektor1[i] = vektor2[i]
+    Outputs:    res - indices where vector1[i] = vector2[i]
     '''
-    erg = [i for i in range(len(vektor1)) if vektor1[i] == vektor2[i]]
-    return erg    
+    res = [i for i in range(len(vector1)) if vector1[i] == vector2[i]]
+    return res    
 
     
-def searchIndizes(schreiben, token):
-    # überprüft
+def searchIndizes(document, token):
+    # checks
     '''
-    überprüft ob das gesuchte token in dem dokument vorkommt und gibt die
-    indizes an, in denen es steht, bspw um Wörter wie von:, grüße, etc. zu 
-    finden
+    checks whether the searched token occurs in the document and returns the
+    indices where it appears, e.g. to find words like "von:", "grüße", etc.
     
-    Inputs:     schreiben - das NICHT TOKENISIERTE Dokument
-                token - das Token, das gefunden werden soll
+    Inputs:     document - the NON-tokenized document
+                token - the token to search for
             
-    Ouputs:     erg - Indizes, an denen das Wort steht bzw "1" wenn Wort nicht 
-                      in dem Vektor vorkommt
+    Ouputs:     res - indices where the word occurs or "1" if the word does not 
+                      occur in the vector
     '''
-    vektor = schreiben.split()
-    erg = myGleich(vektor, token)
-    return(erg)
+    vector = document.split()
+    res = myGleich(vector, token)
+    return(res)
 
 
-def exWort(indizes):   
+def exWort(indices):   
     '''
-    gibt TRUE aus, wenn das Wort vorkommt und FALSE wenn nicht
+    returns TRUE if the word occurs and FALSE otherwise
     
-    Inputs:     indizes - Ausgabe von searchIndizes
+    Inputs:     indices - output of searchIndizes
     
     Outputs:    TRUE/ FALSE
     '''
-    return bool(type(indizes) is list)
+    return bool(type(indices) is list)
     
 
 
-def naechsteZeichen(schreiben, tok, n):
+def naechsteZeichen(document, tok, n):
    '''
-   findet die naechsten n token, hinter einem vorgegebenen token
+   finds the next n tokens after a given token
     
-   Inputs:      schreiben - das NICHT TOKENISIERTE Dokument
-                tok - token (WORT)
-                n - Anzahl weiterer Token 
+   Inputs:      document - the NON-tokenized document
+                tok - token (WORD)
+                n - number of subsequent tokens 
               
-   Outputs:     A -  Matrix mit den entsprechenden Token
-                   Sonderfall: Dokument zuende: []
+   Outputs:     A - matrix with the corresponding tokens
+                   special case: end of document: []
    '''
-   schreiben_tok = schreiben.split()
-   tokenstarter = searchIndizes(schreiben, tok)
-   # erstelle ein A
+   document_tok = document.split()
+   tokenstarter = searchIndizes(document, tok)
+   # create A
    A = []
    for i in range(len(tokenstarter)): 
        A.append([])
        for j in range(n):
            A[i].append('')
-   # fülle das A
+   # fill A
    for i in range(len(tokenstarter)):
         for j in range(n):
-            if len(schreiben_tok) > tokenstarter[i] + j + 1:
-                A[i][j] = schreiben_tok[int(tokenstarter[i]) + j + 1]
+            if len(document_tok) > tokenstarter[i] + j + 1:
+                A[i][j] = document_tok[int(tokenstarter[i]) + j + 1]
             else:
                 A[i][j] = []
    return A
 
 
-def findeFunc(schreiben, tokenvektor, n):
+def findeFunc(document, tokenvector, n):
     '''
-    findet die nächsten n token nach den token aus tokenvektor
+    finds the next n tokens after the tokens in tokenvector
     
-    Inputs:     schreiben - das NICHT TOKENISIERTE Dokument 
-                tokenvektor - Vektor mit mgl token 
-                n - Anzahl Token hinter dem angegebenen, die betrachtet werden
+    Inputs:     document - the NON-tokenized document 
+                tokenvector - vector with possible tokens 
+                n - number of tokens after the specified one to consider
               
-    Outputs:    mgl_token - die entsprechenden Token
+    Outputs:    poss_token - the corresponding tokens
     '''
     count = -1
-    namen = []
-    mgl_token = []
+    names = []
+    poss_token = []
     
-    # wenn nur nach einem token gesucht wird
-    if isinstance(tokenvektor, str):
-        tk = searchIndizes(schreiben, tokenvektor)
+    # if only one token is searched
+    if isinstance(tokenvector, str):
+        tk = searchIndizes(document, tokenvector)
         if exWort(tk):
-            erg = naechsteZeichen(schreiben, tokenvektor, n)
-            mgl_token += erg
+            res = naechsteZeichen(document, tokenvector, n)
+            poss_token += res
             
-    # wenn nach einem Vektor gesucht wird        
+    # if a vector is searched        
     else:
-        for i in range(len(tokenvektor)):
+        for i in range(len(tokenvector)):
             count += 1
-            token = tokenvektor[i]
-            tk = searchIndizes(schreiben, token)
+            token = tokenvector[i]
+            tk = searchIndizes(document, token)
             if exWort(tk):
-               locals()['token_%s' % count] = naechsteZeichen(schreiben, token, n)
-               namen += [count]
-        for i in namen:
-            mgl_token += locals()['token_%s' % i]
-    return mgl_token
+               locals()['token_%s' % count] = naechsteZeichen(document, token, n)
+               names += [count]
+        for i in names:
+            poss_token += locals()['token_%s' % i]
+    return poss_token
 
-
-
-def levenMatrix(vektor):
+def levenMatrix(vector):
     '''
-    berechnet für eine Liste die Levenshtein Distanz zwischen allen
-    Listenelementen
+    computes the Levenshtein distance between all elements
+    of a list
     
-    Inputs:     vektor (die Liste)
+    Inputs:     vector (the list)
     
-    Outpust:    LM - die Matrix
+    Outputs:    LM - the matrix
 
     '''
-    # wenn der form [['vor' 'zu'], ['vor2' 'zu2'], ['vor3' 'zu3']]
-    # (was so sein sollte, zumindest bei Namenfinden)
-    # umwandeln in ['vor zu', 'vor2 zu2', 'vor3 zu3']
-    if len(vektor[0][0]) > 1:
-        neuvek = []
-        for i in range(len(vektor)):
-           neuvek.append(' '.join(vektor[i]))
-        vektor = neuvek
-    n = len(vektor)
-    # setzt schon die Nullen auf der Diagonalen fest
+    # if of the form [['vor' 'zu'], ['vor2' 'zu2'], ['vor3' 'zu3']]
+    # (which should be the case, at least for name extraction)
+    # convert to ['vor zu', 'vor2 zu2', 'vor3 zu3']
+    if len(vector[0][0]) > 1:
+        newvec = []
+        for i in range(len(vector)):
+           neuvek.append(' '.join(vector[i]))
+        vector = newvec
+    n = len(vector)
+    # initializes zeros on the diagonal
     LM = [0] * n
     for x in range(n):
         LM[x] = [0] * n
     for i in range(n):
         for j in range(n):
             if j > i:
-                LM[i][j] = lev(vektor[i], vektor[j])
-            else: # quasi gespiegelte Matrix
+                LM[i][j] = lev(vector[i], vector[j])
+            else: # mirrored matrix
                 LM[i][j] = LM[j][i]
                 
     LM = pd.DataFrame(LM)
-    LM.columns = vektor
+    LM.columns = vector
     return(LM)
 
-def findEinzelToken(mglkeiten):
+def findEinzelToken(possibilities):
     '''
-    sucht die Token einzeln (nicht als ganzer 'Wortblock' nach Duplikaten ab)
+    searches tokens individually (not as full "word blocks") for duplicates
     
-    Inputs:     mglkeiten - Vektor mit den möglichen Namen, VNRs oÄ
+    Inputs:     possibilities - vector with possible names, VNRs, etc.
     
-    Outputs:    Erg - Matrix mit der Anzahl Wörter, die in jeder Kombination
-                      der Wortblöcke häufiger vorkommt
+    Outputs:    Res - matrix with the number of words that occur more often
+                      in each combination of word blocks
 
     '''
-    # geht erst ab zweielementigen
-    z = len(mglkeiten)
-    n = len(mglkeiten[0])
-    Erg = pd.DataFrame(z * [z * [0]])
-    for i in range(z): # ueber alle Wortblöcke
-        for j in range(n): # hole das einzelene Token raus
-            vglwort = mglkeiten[i][j]
+    # works only for elements with at least two entries
+    z = len(possibilities)
+    n = len(possibilities[0])
+    Res = pd.DataFrame(z * [z * [0]])
+    for i in range(z): # over all word blocks
+        for j in range(n): # extract individual token
+            compword = possibilities[i][j]
             for k in range(z):
                 count = 0
                 for l in range(n):
-                    if (vglwort == mglkeiten[k][l]):
+                    if (compword == possibilities[k][l]):
                         count += 1
-                Erg[i][k] += count
-    return(Erg)
+                Res[i][k] += count
+    return(Res)
 
 
-# diese funktion soll die ganzen übereinstimmungen, die nicht auf der
-# mittellinie liegen, und alle teilweisen übereinstimmungen mit den
-# jeweils übereinstimmenden Wörtern ausgeben
+### this function should output all matches that are not on the
+### main diagonal, and all partial matches with the corresponding
+### matching words
 
-# bzw stattdessesn
-
-# def whichMehrfach(mglkeiten, n = 2):
-#     erg = findEinzelToken(mglkeiten)
-#     # betrachte dazu nur die obere dreiecksmatrix
-#     erg
-
-def countToken(mglkeiten):
+def countToken(possibilities):
     '''
-    zählt für jedes unterschiedliche Token, wie oft es im Vektor mglkeiten
-    vorkommt
+    counts how often each distinct token occurs in the vector mglkeiten
     
-    Inputs:     mglkeiten - Vektor mit möglichen Namen, VNRs etc, deren
-                            Häufigkeiten bestimmt werden sollen
+    Inputs:     possibilities - vector with possible names, VNRs, etc., whose
+                            frequencies should be determined
                             
-    Outputs:    counter -   Objekt, das beinhaltet, wie oft jedes Token
-                            vorkommt, hier erstmal ohne Levenshtein-Distanz
-                            zu beachten, sehr ähnliche werden also als zwei 
-                            einzelne aufgeführt
+    Outputs:    counter -   object containing how often each token occurs,
+                            initially without considering Levenshtein distance,
+                            so very similar ones are counted separately
     '''
-    # TODO so ähnlich -> ausgabe anpassen!
-    if ([mglkeiten[0]] == mglkeiten):
-        return(cl.Counter(mglkeiten[0]))
+    if ([possibilities[0]] == possibilities):
+        return(cl.Counter(possibilities[0]))
     else:
-        alle = []
-        for i in range(len(mglkeiten)):
-            for j in range(len(mglkeiten[i])):
-                alle.append(mglkeiten[i][j])
+        all = []
+        for i in range(len(possibilities)):
+            for j in range(len(possibilities[i])):
+                all.append(possibilities[i][j])
                 
-        counter = cl.Counter(alle)
+        counter = cl.Counter(all)
         
         return(counter)
 
 ### VNR =======================================================================
 
-# Das wird als erstes gemacht, weil hier die Zeichen noch wichtig sind. 
-# Hiernach werden sie entfernt (für Namen, GeVo usw.)
+# This is done first, because the characters are still important here.
+# After this, they are removed (for names, GeVo, etc.)
 
 def vnrFinden(schreiben):
     '''
-    durchsucht die typischen Plätze für Versicherungsnummern
+    searches typical positions for insurance numbers
     
     Inputs:     schreiben
     
-    Outputs:    mögliche VNRs
+    Outputs:    possible VNRs
     '''
     vnr_token = ['Versicherungsnummer', 'VersicherungsNr.', 'Nr.', 'Nr:', 
                  'Nr.:', 'Nr', 'VNR', 'VNR:', 'Versicherungsnummer:', 
@@ -514,36 +490,36 @@ def vnrFinden(schreiben):
 
 def vnrBauen(schreiben):
     '''
-    versucht die VNR zusammenzubauen, und zu stoppen, wenn sie vorbei ist
+    tries to construct the VNR and stops when it ends
     
     Inputs:     schreiben
     
-    Outputs:    mögliche VNRs
+    Outputs:    possible VNRs
     '''
     mglkeiten = vnrFinden(schreiben)
-    vgl_vektor = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '/', '.',
+    vgl_vector = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '/', '.',
                   ',', '-', '|']
-    neu_mgl = mglkeiten # der gleichen Form wie mglkeiten machen
-    # loopen über die verschiedenen male, dass eine VNR auftritt
+    neu_mgl = mglkeiten # keep the same structure as mglkeiten
+    # loop over the different occurrences of a VNR
     for k in range(len(mglkeiten)):
-        # loopen über die verschiedenen token die ausgelesen werden
-        for j in range(len(mglkeiten[k])): # das ist auch immer das gleiche
-            # ev loopen über die ersten beiden elemente um zu gucken, dass
-            # es wirklich eine Zahl ist?
+        # loop over the different tokens that are extracted
+        for j in range(len(mglkeiten[k])): # always the same
+            # possibly loop over the first two elements to check whether
+            # it is actually a number?
             a_mgl = neu_mgl[k][j]
             if len(a_mgl) > 0:
                 for i in range(len(a_mgl)):
-                    # checken ob was vorkommt, was keine Ziffer oÄ ist
-                    if a_mgl[i] not in vgl_vektor:
+                    # check if something occurs that is not a digit or similar
+                    if a_mgl[i] not in vgl_vector:
                             a_mgl = a_mgl.replace(a_mgl[i], 'X')
             neu_mgl[k][j] = a_mgl
-    # lösche, ab wenn es mit 2 X irgendwo losgeht & wenn es leer ist
+    # delete from where it starts with 2 X somewhere & if it is empty
     str_zsm = [None] * len(mglkeiten)
     for k in range(len(mglkeiten)):
         for j in range(len(mglkeiten[k])): 
                 if 'X' in neu_mgl[k][j] or neu_mgl[k][j] == []:
                     neu_mgl[k][j] = ''
-        # füge zusammen, was dann für jede VNR übrig bleibt
+        # concatenate what remains for each VNR
         str_zsm[k] = "".join(neu_mgl[k])       
     return str_zsm
 
@@ -551,17 +527,16 @@ def vnrBauen(schreiben):
 
 def searchZahlenzeichenketten(schreiben):
     '''
-    findet Zahlenzeichenketten (mit den Zeichen und Zahlen aus vgl_vektor)
-    in einem Dokument
+    finds numeric character strings (with the characters and digits from vgl_vector)
+    in a document
     
-    Inputs:      schreiben - nicht tokenisiertes Dokument
+    Inputs:      schreiben - non-tokenized document
     
-    Outputs:    zahlentoken - die Zahlentoken, die in dem Dokument 
-                                vorkommen
-                numbind - die Indizes dieser Zahlentoken
+    Outputs:    zahlentoken - the numeric tokens that occur in the document
+                numbind - the indices of these numeric tokens
 
     '''
-    vgl_vektor = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '/', '.',
+    vgl_vector = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '/', '.',
                   ',', '-', '|']
     schreibsplit = schreiben.split()
     schreibsplit
@@ -570,7 +545,7 @@ def searchZahlenzeichenketten(schreiben):
         # isdig.append(schreibsplit[i].isdigit())
         token = schreibsplit[i]
         for j in range(len(token)):
-            if (token[j] not in vgl_vektor):
+            if (token[j] not in vgl_vector):
                 isdig.append(False)
                 break;
             elif (j == (len(token) - 1)):
@@ -581,13 +556,13 @@ def searchZahlenzeichenketten(schreiben):
 
 
 # TODO
-# hier nochmal checken was passiert
+# check again what happens here
 def searchVNR(schreiben):
     '''
-    findet VNRs indem es die Zahlentoken aus 
-    searchZahlenzeichenketten zusammenfügt
+    finds VNRs by combining numeric tokens from 
+    searchZahlenzeichenketten
     
-    Inputs:     schreiben - nicht tokensiertes Dokument
+    Inputs:     schreiben - non-tokenized document
     
     Outputs:    zt - 
 
@@ -599,31 +574,30 @@ def searchVNR(schreiben):
             isnext.append(True)
         else:
             isnext.append(False)
-    # kombiniere die, die direkt hintereinanderstehen
+    # combine those that are directly consecutive
     zahlentoken = list(zahlentoken)
     zt = zahlentoken
     for i in range(len(numbind) - 1):
         if (isnext[i] and not isnext[i + 1]):
             # TODO 
-            # hier nochmal ändern, dass eine indexverschiebung durh
-            # ver#nderung von zt in einer schleifeniteration in den 
-            # nächsten beachtet wird, das ist aktuell noch nicht der fall
+            # modify here so that index shifts caused by
+            # changes to zt within one loop iteration are
+            # considered in the next; this is currently not the case
             zt[i:(i + 2)] = [''.join(zahlentoken[i:(i + 2)])]
     return(zt)
 
     
-# TODO - Ergänzungen notwendig: searchVNR rein, levenshtein rein, häufigkeit rein
-# vergleicht die VNRs
+# TODO - additions needed: include searchVNR, Levenshtein, frequency
+# compares the VNRs
 def vnrVergleich(schreiben):
-    # überprüft
+    # checks
     '''
-    vergleicht die VNRs 
+    compares the VNRs 
     
-    Inputs:     schreiben - nicht tokensiertes Dokument
+    Inputs:     schreiben - non-tokenized document
     
-    Outputs:    im Optimalfall: VNR, sonst aktuell (ÄNDERN!!) 'unklare VNR' und
-                'keine VNR gefunden' (printet das, speichert für die hinteren
-                                  beiden fälle None)
+    Outputs:    ideally: VNR, otherwise currently (TO CHANGE!!) 'unclear VNR' and
+                'no VNR found' (prints that, stores None for the latter cases)
     '''
     try: 
         mgl_vnr = vnrBauen(schreiben)
@@ -636,27 +610,25 @@ def vnrVergleich(schreiben):
         else:
             return ('ev ' + vnr)
             # TODO 
-            # jetzt gebe ich hier einfach die erste mit einem 'EV' davor
-            # aus, das ist jetzt nicht unbedingt die Optimallösung
+            # currently just return the first one with 'ev' in front,
+            # which is not necessarily the optimal solution
     except:
         # TODO
-        # nach VNR hinter dem Namen suchen wenn keine zu finden im Text (Kopf)
-        # vielleicht einfach lange Zahlen suchen?
-        return 'keine gefunden'
+        # search for VNR after the name if none found in the text (header)
+        # maybe simply search for long numbers?
+        return 'none found'
 
-# TODO
-# hier noch nach langen ketten von Zeichen suchen zb "!!!!!!!!"
 
-### Punctuation entfernen =====================================================
+### remove punctuation =====================================================
 
 def delPunct(schreiben):
-    # überprüft
+    # checks
     '''
-    löscht punctuation aus dem Schreiben
+    removes punctuation from the document
     
-    Inputs:     schreiben - NICHT tokenisiertes schreiben
+    Inputs:     schreiben - NON-tokenized document
     
-    Outputs:    schreiben ohne punctuation
+    Outputs:    document without punctuation
 
     '''
     punctuation = list('!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~€°’‘“—«”£„‘©®»‚‚')
@@ -665,30 +637,30 @@ def delPunct(schreiben):
     return token_punctless
 
 def delPuncts(dok_list):
-    # überprüft
+    # checks
     '''
-    löscht die Punctuation aus allen Schreiben in der dok_list
+    removes punctuation from all documents in dok_list
     
-    Inputs:     dok_list - Liste nicht-tokenisierter Dokumente
+    Inputs:     dok_list - list of non-tokenized documents
     
-    Outputs:    dok_list ohne punctuation
+    Outputs:    dok_list without punctuation
     '''
     new_list = []
     for i in dok_list:
         new_list.append(delPunct(i))
     return new_list
 
-### alle Buchstaben klein =====================================================
+### convert all letters to lowercase =========================================
 
 def machLowercase(dok_list):
-    # überprüft
+    # checks
     '''
-    macht alle buchstaben zu Kleinbuchstaben
+    converts all letters to lowercase
     
-    Inputs:     dok_list - Liste nicht-tokenisierter Dokumente
+    Inputs:     dok_list - list of non-tokenized documents
     
-    Outputs:    new_list - Liste mit nicht-tokenisierten Dokumenten, komplett 
-                           in Kleinbuchstaben
+    Outputs:    new_list - list of non-tokenized documents, completely
+                           in lowercase
     '''
     new_list = []
     for i in dok_list:
@@ -699,24 +671,24 @@ def machLowercase(dok_list):
 
 def namenFinden(schreiben):
     '''
-    durchsucht mit namenFinden die typischen Plätze für Namen
+    searches typical positions for names
     
-    Inputs:     schreiben - nicht tokenisiertes Dokument
+    Inputs:     schreiben - non-tokenized document
     
-    Outputs:    mgl_namen - mögliche Namen
+    Outputs:    mgl_namen - possible names
     '''
     punctuation = list('!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~€°’‘“—«”£„‘©®»')
     numbers = list('0123456789')
     schreiben_lower = delPunct(schreiben).lower()
     namen_token = ['grüßen', 'grüße', 'gruß', 'von', 'from']
     schreiben_tok = schreiben_lower.split()
-    # da der Name oft als erstes im Briefkopf steht:
+    # since the name is often at the beginning of the letterhead:
     stelle12 = schreiben_tok[0:2]
     m = 2
     mgl_namen = findeFunc(schreiben_lower, namen_token, m)
     mgl_namen.append(stelle12)
     todel = []
-    # loop über alle mgl namen um email adressen und zahlen rauszuwerfen
+    # loop over all possible names to remove email addresses and numbers
     nein_words = ['von', 'signal', 'iduna', 'signaliduna', 'kundenservice',
                   'kundenberater', 'kundenberaterin', 'ihnen', 'der', 
                   'die', 'das', 'dem']
@@ -725,8 +697,7 @@ def namenFinden(schreiben):
             if mgl_namen[i][j] in nein_words:
                 todel.append(i)
                 break            
-        # sonst die beiden wortteile getrennt betrachten und nur die einzelnen
-        # buchstaben betrachten
+        # otherwise consider both parts separately and check individual characters
         else: 
             for j in range(m):
                 part = list(mgl_namen[i][j])
@@ -736,7 +707,7 @@ def namenFinden(schreiben):
                 elif any(map(lambda v: v in numbers, part)):
                     todel.append(i)
                     break
-                # damit email adressen mit signaliduna rausgehen
+                # to filter out email addresses containing "signaliduna"
                 elif all(map(lambda v: v in part, list('signaliduna'))):
                     todel.append(i)
                     break
@@ -747,15 +718,15 @@ def namenFinden(schreiben):
     return mgl_namen
 
 # TODO
-# hier cleverere Auswahl treffen, levenshtein oÄ rein (das reicht aber noch 
-# nicht glaube ich)
+# make a smarter selection here, include Levenshtein etc. (probably not enough yet)
 def nameVergleich(schreiben):
     '''
-    JETZT WIRD EINER DER NAMEN DIE AM HÄUFIGSTEN VORKOMMEN GENOMMEN (DER ERSTE)
-    PROBLEME: ANDERS GESCHRIEBEN; NAME KOMMT NUR EINMAL VOR
-    Inputs: schreiben (nicht tokenisiert)
+    CURRENTLY ONE OF THE MOST FREQUENT NAMES IS SELECTED (THE FIRST ONE)
+    PROBLEMS: DIFFERENT SPELLINGS; NAME OCCURS ONLY ONCE
     
-    Outputs: ein möglicher Name
+    Inputs: schreiben (non-tokenized)
+    
+    Outputs: a possible name
     '''
     try:
         namen_vek = namenFinden(schreiben)
@@ -776,12 +747,12 @@ def nameVergleich(schreiben):
 
 def KFindenSimple(schreiben, k_words):
     '''
-    sucht nach den Wörtern, die eine Kündigung beschreiben und sortiert so in
-    Kündigung und keine Kündigung
+    searches for words that indicate a cancellation and classifies into
+    cancellation or non-cancellation
     
-    Inputs:     schreiben - nicht tokenisiertes Dokument
+    Inputs:     schreiben - non-tokenized document
     
-    Outputs:    dok_Gevo - 'K' oder 'N', je nachdem ob Kündigung oder nicht
+    Outputs:    dok_Gevo - 'K' or 'N', depending on cancellation or not
     '''
     schreiben_lower = delPunct(schreiben).lower()
     dok = schreiben_lower.split()
@@ -795,12 +766,12 @@ def KFindenSimple(schreiben, k_words):
 
 def gevoFinden(schreiben, k_words, nk_words, pos = 'K', neg = 'N'):
     '''
-    sucht nach den Wörtern, die eine Kündigung beschreiben und sortiert so in
-    Kündigung und keine Kündigung
+    searches for words that indicate a cancellation and classifies into
+    cancellation or non-cancellation
     
-    Inputs:     schreiben - nicht tokenisiertes Dokument
+    Inputs:     schreiben - non-tokenized document
     
-    Outputs:    dok_Gevo - 'K' oder 'N', je nachdem ob Kündigung oder nicht
+    Outputs:    dok_Gevo - 'K' or 'N', depending on cancellation or not
     '''
     schreiben_lower = delPunct(schreiben).lower()
     dok = schreiben_lower.split()
@@ -828,26 +799,16 @@ def gevoFinden(schreiben, k_words, nk_words, pos = 'K', neg = 'N'):
             
     return(dok_GeVo)
 
-
-### Grund =====================================================================
-
-
-#TODO
-# insb die Wörter noch sehr stark überarbeiten
-# B: Berufswechse/ Abgang
-# F: finanziell
-# R: Rente/ Berufsausstieg
-# T: Todesfall
-# S: Sonstiges/ Keiner
+### Reason =====================================================================
 
 def grundFinden(schreiben):
     '''
-    sucht nach den Wörtern, die einen Grund beschreiben und ordnet
-    entsprechende Gründe zu
+    searches for words that describe a reason and assigns
+    corresponding categories
     
-    Inputs:     schreiben - nicht tokenisiertes Schreiben
+    Inputs:     schreiben - non-tokenized document
     
-    Outputs:    dok_Grund - Vektor mit Buchstaben, die die Gründe beschreiben
+    Outputs:    dok_Grund - vector with letters representing the reasons
     '''
     schreiben_lower = delPunct(schreiben).lower()
     dok = schreiben_lower.split()
@@ -872,15 +833,15 @@ def grundFinden(schreiben):
 
 def grundVergleich(schreiben):
     '''
-    gibt aus einem Dokument aus, zu welchem Grund die meisten Wörter vorkommen
-    und wie viele es zu jedem Grund gibt
+    determines which reason appears most frequently in a document
+    and how often each reason occurs
     
     Inputs:     schreiben
     
-    Outputs:    Grund - am häufigsten vorkommender Grund
+    Outputs:    Grund - most frequent reason
     
-                falls dieser nicht eindeutig:
-                erg_tab - Liste, wie oft jeder Grund vorkommt
+                if not unique:
+                erg_tab - dictionary with frequencies of each reason
     '''
     schreiben_lower = delPunct(schreiben).lower()
     mgl_gruende = grundFinden(schreiben_lower)
@@ -908,20 +869,20 @@ def grundVergleich(schreiben):
 ### Corona ====================================================================
 
 def covidFinden(schreiben):
-    # überprüft
+    # checks
     '''
-    durchsucht ob die Wörter Corona, covid, oÄ vorkommen
+    checks whether words like Corona, covid, etc. occur
     
-    Inputs:     schreiben - nicht tokenisiertes Dokument
+    Inputs:     schreiben - non-tokenized document
     
-    Outputs:    erg - Vektor mit Plätzen, an denen Coronawörter stehen (oÄ)
+    Outputs:    erg - vector with positions where COVID-related words occur
     '''
     covid_token = ['corona', 'covid', 'covid19', 'pandemie', 'coronabedingt',
                    'pandemisch', 'pandemische', 'pandemischen', 'kurzarbeit',
                    'coronakrise', 'lockdown', 'coronaregeln']
     schreiben_lower = delPunct(schreiben).lower()
     # TODO 
-    # irgendwie startswith einbringen?
+    # maybe include startswith somehow?
     erg = []
     for i in range(len(covid_token)):
         erg += searchIndizes(schreiben_lower, covid_token[i]) 
@@ -931,10 +892,10 @@ def covidFinden(schreiben):
 def covidVergleich(schreiben):
     
     '''
-    gibt TRUE aus, wenn ein Coronawort vorkommt (oder mehrere) und FALSE, 
-    wenn nicht
+    returns TRUE if a COVID-related word occurs (or multiple), and FALSE
+    otherwise
     
-    Inputs:     schreiben - nicht tokenisiertes Dokument
+    Inputs:     schreiben - non-tokenized document
     
     Outputs:    TRUE/FALSE
     '''
@@ -946,20 +907,20 @@ def covidVergleich(schreiben):
         return False
 
 # =============================================================================
-# Nur den Textkörper rausholen (für die Klassifikation)
+# Extract only the main body text (for classification)
 # =============================================================================
 
 
 def getHauptteil(schreiben):
     '''
-    holt den Textkörper aus einem schreiben
-    DAS MACHT SIE NICHT MEHR WEIL DAS KEINEN SINN ERGIBT 
-    NUR NOCH DRIN UM NICHT ALLES ÄNDERN ZU MÜSSEN
+    extracts the main body of a document
+    THIS NO LONGER DOES THAT BECAUSE IT DOES NOT MAKE SENSE
+    ONLY KEPT TO AVOID CHANGING EVERYTHING
     
-    Inputs:     schreiben - das nicht-tokenisierte Dokument
+    Inputs:     schreiben - non-tokenized document
     
-    Outputs:    erg - schreiben ohne 'Einleitung' und stand jetzt alles in
-                      Kleinbuchstaben und ohne Punctuation
+    Outputs:    erg - document without "introduction" and currently all in
+                      lowercase and without punctuation
     '''
     schreiben_pl = delPunct(schreiben)
     schreiben_lower = schreiben_pl.lower()
@@ -978,7 +939,7 @@ def getHauptteil(schreiben):
 
 def getHauptteile(dok_list):
     '''
-    getHauptteil für dok_list
+    applies getHauptteil to dok_list
     '''
     new_list = []
     for i in dok_list:
@@ -986,26 +947,27 @@ def getHauptteile(dok_list):
     return new_list
 
 # TODO
-# eventuell alles nach den Grüßen löschen
+# possibly remove everything after the greetings
 
 # =============================================================================
-# Alles in Excel Tabelle schreiben
+# Write everything into an Excel table
 # =============================================================================
 
-### Tabelle erstellen ========================================================
+### Create table ========================================================
  
 
 def getInfos(schreiben):
     '''
-    gibt für ein schreiben den Namen, die VNR, den GeVo und Corona aus
+    returns name, VNR, GeVo and COVID indicator for a document
     
-    Inputs:     schreiben - nicht tokenisiertes Dokument
+    Inputs:     schreiben - non-tokenized document
     
-    Outputs:    Infos - mit:
+    Outputs:    Infos - containing:
                 name
                 vnr
                 gevo
-                Corona
+                covid
+                text body
     '''
     name = nameVergleich(schreiben)
     vnr = vnrVergleich(schreiben)
@@ -1016,14 +978,13 @@ def getInfos(schreiben):
     Infos = [name, vnr, gevo, covid, textteil]
     return Infos
 
-
 def createTable(dok_list):
     '''
-    erstellt eine Tabelle aus getInfos
+    creates a table using getInfos
     
     Inputs:     dok_list
     
-    Outputs:    Tabelle
+    Outputs:    table
 
     '''
     Tabelle = []
@@ -1031,19 +992,18 @@ def createTable(dok_list):
         Tabelle += getInfos(dok_list[i])
     return(Tabelle)
      
-### Tabelle in Excel schreiben ================================================
+### write table to Excel ======================================================
 
 def tabelleSchreiben(dok_list, filename):
     '''
-    erstellt eine Excel Tabelle mit den gegebenen Infos
+    creates an Excel table with the given information
     
-    Inputs:     dok_list - Liste mit den Dokumenten
+    Inputs:     dok_list - list of documents
     
-                filename - der Name, unter dem das Excel file gespeichert werden 
-                           soll
+                filename - the name under which the Excel file should be saved
                            
-    Outputs:    keine Outputs in python, excel Tabelle wird im Ordner 
-                Schriftstücke\Outputs unter filename gespeichert
+    Outputs:    no outputs in Python, Excel table is saved in the folder 
+                Schriftstücke\Output under filename
     '''
     tab = createTable(dok_list)
     namen = tab[0::5]
@@ -1055,8 +1015,8 @@ def tabelleSchreiben(dok_list, filename):
     os.chdir(r'W:\Sonder\lva-93300\Schriftstücke\Output')
     outWorkbook = xlsxwriter.Workbook(filename)
     outSheet = outWorkbook.add_worksheet()
-    outSheet.write('A1', 'Vorname') 
-    outSheet.write('B1', 'Nachname')
+    outSheet.write('A1', 'First name') 
+    outSheet.write('B1', 'Last name')
     outSheet.write('C1', 'VNR')
     outSheet.write('D1', 'GeVos')
     outSheet.write('E1', 'Corona?')
@@ -1093,19 +1053,19 @@ def tabelleSchreiben(dok_list, filename):
 
 # =============================================================================
 # =============================================================================
-# # Textmining (für 4_Datenvorbereitung)
+# # Text mining (for 4_data_preparation)
 # =============================================================================
 # =============================================================================
 
 def setColRowNames(dataframe, colnames, rownames):
     '''
-    setzt für eine pd.DataFrame colnames und rownames
+    sets column and row names for a pandas DataFrame
     
     Inputs:     dataframe
                 colnames
                 rownames
                 
-    Outputs:    dataframe mit col- und rownames
+    Outputs:    dataframe with column and row names
     '''
     
     dataframe.columns = colnames
@@ -1115,16 +1075,16 @@ def setColRowNames(dataframe, colnames, rownames):
     return(dataframe)
 
 # =============================================================================
-# Stemming und Co.
+# Stemming etc.
 # =============================================================================
 
 def getStem(texte):
     '''
-    stemmt eine Liste von Texten
+    stems a list of texts
     
-    Inputs:     texte - dok_list quasi????
+    Inputs:     texte - basically dok_list?
     
-    Outputs:    txt_stem - Liste mit gestemmten Texten
+    Outputs:    txt_stem - list of stemmed texts
 
     '''
     stemmer = snowballstemmer.stemmer('german')
@@ -1140,17 +1100,17 @@ def getStem(texte):
 
 
 
-def delWortvektor(schreiben, wortvektor):
+def delWortvector(schreiben, wortvector):
     '''
-    löscht alle Wörter die in einem Vektor vorkommen aus einem schreiben
+    removes all words contained in a given vector from a document
     
     Inputs:     schreiben
-                wortvektor
+                wortvector
         
-    Outputs:    schreiben ohne wörter aus wortvektor
+    Outputs:    document without words from wortvector
 
     '''
-    schreib = [token for token in schreiben.split() if token not in wortvektor]
+    schreib = [token for token in schreiben.split() if token not in wortvector]
     schreib2 = ' '.join(schreib)
     return(schreib2)
 
@@ -1159,46 +1119,16 @@ def delWortvektor(schreiben, wortvektor):
 
 
 stop_words = get_stop_words('de')
-stop_words_stem = getStem(stop_words)
-
-# del_words = getStem(['betreff', 'bitte', 'dame', 'dortmund', 'freundliche',
-#        'geehrt', 'grüßen', 'herr', 'hiermit', 'iduna', 'seit',
-#        'signal', 'signaliduna', 'wegen', 'wurde', 'möchte',  'service-fax',
-#        'fax', 'ich' , 'web', 'wohl', 'kurz', 'ab', 'fur', 'lasse',
-#        'ev', 'steh', 'selbstverstand', 'zentral', 'gut', 'tag', 'bereit',
-#        'cc', 'wurd', 'infosignalidunad', 'hamburg'])
-
-
-# my_del_words = stop_words + del_words 
-
-# ges_del = list(map((lambda x: x + ','), my_del_words)) + my_del_words
-
-
-# löscht Stoppwörter und "del_words" aus einem Schreiben
-# def delWords(schreiben):
-#     # überprüft
-#     '''
-#     löscht Stoppwörter und "del_words" aus einem Schreiben
-    
-#     Inputs:     schreiben (mit Stopp- und del_words)
-        
-#     Outputs:    schreiben ohne Stoppwörter und del_words
-
-#     '''
-#     schreib2 = delWortvektor(schreiben, ges_del)
-#     # schreib = [token for token in schreiben.split() if token not in my_del_words]
-#     # schreib2 = ' '.join(schreib)
-#     return(schreib2)    
-    
+stop_words_stem = getStem(stop_words)    
 
 
 def delNumbers(schreiben):
     '''
-    löscht alle token, in denen Zahlen vorkommen
+    removes all tokens that contain numbers
     
-    Inputs:     schreiben - nicht tokenisiertes schreiben
+    Inputs:     schreiben - non-tokenized document
     
-    Outputs:    erg - nicht tokenisiertes schreiben ohne zahlen (als str)
+    Outputs:    erg - non-tokenized document without numbers (as string)
 
     '''
     numbers = list('0123456789')  
@@ -1213,15 +1143,15 @@ def delNumbers(schreiben):
 
 
 
-### DTM Matrizen berechenn
+### compute DTM matrices
 
 def getDTM(vect, txt, cols = True):
     '''
-    erstellt die Document Term Matrix (oben die Dokumente und seitlich die 
-                                       Wörter)
+    creates the Document-Term Matrix (documents as columns and 
+                                      words as rows)
     
     Inputs:     vect - CountVectorizer
-                txt - Texte ohne Stoppwörter
+                txt - texts without stopwords
     
     Outputs:    
 
@@ -1306,90 +1236,51 @@ def delSelteneWoerter2(vect, X_train_B, X_train_F, X_train_K, X_train_R, X_train
     return(keep_token, new_df)
 
 
-# def delSelteneWoerter(vect, X_train_K, X_train_NK, p, K_len_train, NK_len_train):
-    
-#     vect_K = vect
-#     vect_K.fit_transform(X_train_K)
-#     token_K = vect_K.get_feature_names() 
-#     dtm_K = getDTM(vect_K, X_train_K)
-    
-#     count_K = countFuncAll(dtm_K, token_K)
-#     count_K_df = pd.DataFrame(data = [token_K, count_K], index = ['token', 'count K']).T
-     
-#     vect_NK = vect
-#     vect_NK.fit_transform(X_train_NK)
-#     token_NK = vect_NK.get_feature_names() 
-#     dtm_NK = getDTM(vect_NK, X_train_NK)
-    
-#     count_NK = countFuncAll(dtm_NK, token_NK)
-#     count_NK_df = pd.DataFrame(data = [token_NK, count_NK], index = ['token', 'count NK']).T
-    
-#     gem_df = pd.merge(count_K_df, count_NK_df, on = 'token', how = 'outer')
-#     gem_df = gem_df.fillna(0)
-    
-#     # Lösche alle Token, die in weniger als 1% der Kündigungen und in weniger
-#     # als p% der Nicht-Kündigungen vorkommen (13.57; 126.28)
-    
-#     keep_K = np.where(gem_df['count K'] > (p * K_len_train))
-#     keep_NK = np.where(gem_df['count NK'] > (p * NK_len_train))
-    
-#     keep_both = np.unique((np.append(keep_K, keep_NK)))
-#     keep_token = list(gem_df['token'][keep_both])
-    
-#     new_df = pd.concat([gem_df['token'][keep_both], gem_df['count K'][keep_both], gem_df['count NK'][keep_both]], axis = 1)
-#     new_df = setColRowNames(new_df, new_df.columns, new_df['token'])
-    
-#     return(keep_token, new_df)
-
-# TODO
-# einfangen wenn df() = 0 ist (geht das?)
-
-
-### lösche seltene Wörter ================
+### remove rare words ================
 
 
 def countFuncAll(dtm, token_vec):
     '''
-    cF     zaehlt in wievielen der einzeltexte aus texte ein token vorkommt, ACHTUNG:
-        zaehlt nicht wie oft es insgesamt vorkommt, sondern, in wie vielen der
-        texten, wenn es also in einem text häufiger als einmal vorkommt, zählt
-        das nur als ein Vorkommen
-    wendet countFunc auf einen Vektor von token an
+    counts in how many individual documents from the texts a token appears, NOTE:
+        it does not count total occurrences, but in how many documents it appears.
+        If it appears multiple times in one document, it is counted only once.
+    applies countFunc to a vector of tokens
 
     Inputs:     dtm - 
                 token_vec
     
-    Outputs:     countvec
+    Outputs:    countvec
     '''
     countvec = []
     for i in range(len(token_vec)):
         countvec.append(len(np.where(dtm.loc[token_vec[i]] > 0)[0]))
     return countvec
 
-def myNotIn(vektor, teilvektor):
+
+def myNotIn(vector, teilvector):
     '''
-    gebe vektor ohne die elemente aus teilvektor zurück
+    returns vector without the elements contained in teilvector
     
-    Inputs:     vektor - langer Vektor 
-                teilvektor - Vektor mit Elementen, die aus vektor gelöscht
-                                werden sollen
+    Inputs:     vector - long vector 
+                teilvector - vector with elements to be removed from vector
         
-    Outputs:    neuvek - neuer Vektor ohne die Elemente aus teilvektor
+    Outputs:    neuvek - new vector without elements from teilvector
     '''
     neuvek = []
-    for i in range(len(vektor)):
-        if vektor[i] not in teilvektor:
-            neuvek.append(vektor[i])
+    for i in range(len(vector)):
+        if vector[i] not in teilvector:
+            neuvek.append(vector[i])
     return(neuvek)
 
-def delWenige(anzahlvektor, anzahl, token_vek):
+
+def delWenige(anzahlvector, anzahl, token_vek):
     '''
-    löscht aus einem Vektor anzahlvektor alle weniger oder gleich anzahl
-    mal vorkommenden wörter und gibt aus, welche wörter aus token_vek die sind,
-    die übrig bleiben, also häufiger als anzahl mal vorkommen
-    funktioniert auch für n-gramme
+    removes from a vector all words that occur less than or equal to "anzahl"
+    times and returns which words from token_vek remain, i.e. those that occur
+    more frequently than "anzahl"
+    also works for n-grams
     
-    Inputs:     anzahlvektor
+    Inputs:     anzahlvector
                 anzahl
                 token_vek
                 
@@ -1398,30 +1289,31 @@ def delWenige(anzahlvektor, anzahl, token_vek):
     '''
     dellist = []
     for i in range(anzahl):
-        dellist +=myGleich(anzahlvektor, i + 1)
+        dellist += myGleich(anzahlvector, i + 1)
     
-    keep = myNotIn(range(len(anzahlvektor)), dellist)
+    keep = myNotIn(range(len(anzahlvector)), dellist)
     
     keep_words = np.array(token_vek)[keep]
     
     return keep_words
 
+
 def getTFIDF(tf):
     '''
-    berechnet die Tfidf Transformation einer Matrix
+    computes the tf-idf transformation of a matrix
     
-    Inputs:     tf - Matrix
+    Inputs:     tf - matrix
     
-    Outputs:    tf_idf - mit tf-idf transformierte Matrix
+    Outputs:    tf_idf - matrix transformed with tf-idf
 
     '''
     tf_array = np.array(tf)
     df = []
-    # J: Anzahl Dokumente
+    # J: number of documents
     J = len(tf.columns)
     
     for j in range(J):
-    # in wie vielen dokumenten ist das nicht enthalten
+        # number of documents where the term is NOT present
         nichtent = len(myGleich(tf_array[:,j],0))
         df.append(J - nichtent)
     
@@ -1439,34 +1331,35 @@ def getTFIDF(tf):
 
 def giniCalc(token, dokvek, auftvek):
     '''
-    berechnet den normalisierten Gini Koeffizienten eines Tokens
+    computes the normalized Gini coefficient of a token
     
     Inputs:
                 token
-                dokvek - enthält "anzahl dokumente klasse 1 mit token", ..., 
-                                "anzahl dokumente klasse n mit token"
-                auftvek - enthält "anzahl dokumente klasse1", ...,
-                                    "anzahl dokumente klasse n"
+                dokvek - contains "number of documents in class 1 with token", ..., 
+                         "number of documents in class n with token"
+                auftvek - contains "number of documents in class 1", ...,
+                          "number of documents in class n"
     
             
-    Output:     gini - Gini Koeffizient des Token
+    Output:     gini - Gini coefficient of the token
     '''
     try: 
         n = len(auftvek)
         p = []
         for i in range(n):
-            p.append(dokvek[i]/np.sum(dokvek))
+            p.append(dokvek[i] / np.sum(dokvek))
         P = auftvek
         p_tilde = []
         for i in range(n):
-            p_tilde.append(p[i]/P[i])
+            p_tilde.append(p[i] / P[i])
         p_tilde_ges = np.sum(p_tilde)
         gini = 0
         for i in range(n):
-            gini += (p_tilde[i]/p_tilde_ges)**2
+            gini += (p_tilde[i] / p_tilde_ges) ** 2
     except:
         gini = 0
     return gini
+
 
 def getGini(df, auftvek):
     gini_ind = []
@@ -1477,6 +1370,7 @@ def getGini(df, auftvek):
         gini_ind.append(giniCalc(token[t], [K_count, NK_count], auftvek))
     return gini_ind
 
+
 def getGini2(df, auftvek):
     gini_ind = []
     token = list(df['token'])
@@ -1486,21 +1380,26 @@ def getGini2(df, auftvek):
         K_count = list(df['count K'])[t]
         R_count = list(df['count R'])[t]
         T_count = list(df['count T'])[t]
-        gini_ind.append(giniCalc(token[t], [B_count, F_count, K_count, R_count, T_count], auftvek))
+        gini_ind.append(
+            giniCalc(
+                token[t],
+                [B_count, F_count, K_count, R_count, T_count],
+                auftvek
+            )
+        )
     return gini_ind
 
-
 ### ===========================================================================
-### Klassifikation (für 5_Klassifikation)
+### Classification (for 5_Classification)
 ### ===========================================================================
 
 def createWC(txt, sw, name, mw = 200):
     '''
      Inputs: txt - 
-             sw - zu verwendende Stoppwörter
+             sw - stopwords to be used
              name - filename
     
-    Output: png Bild mit Wordcloud
+    Output: png image with word cloud
     
     
 
@@ -1600,7 +1499,7 @@ def getWerte(k_words, nk_words, Xtr, ytr, positiv = 'K', negativ = 'N'):
 
 def getWerteKlassi(ytr, ypred):
     '''
-    für klassen 0 und 1, wobei 0 die POSITIVE KLASSE ist
+    for classes 0 and 1, where 0 is the POSITIVE CLASS
     
     '''
     cm = confusion_matrix(ytr, ypred)
@@ -1618,9 +1517,9 @@ def getWerteKlassi(ytr, ypred):
 
 def getBestCombinations(words, Xtr, ytr, gevo1, gevo2 = 'K'):
     '''
-    ich will hier mit k vergleichen und so wie confusion matrix geschrieben
-    ist muss k gevo2 sein, wenn der erste Buchstabe des grundes VOR K
-    im alphabet kommt und sonst gevo1
+    here I want to compare with K, and depending on how the confusion matrix
+    is defined, K must be gevo2 if the first letter of the class
+    comes BEFORE K in the alphabet, otherwise gevo1
 
     '''
     numbers = list(range(len(words)))
@@ -1667,34 +1566,14 @@ def getBestCombinations(words, Xtr, ytr, gevo1, gevo2 = 'K'):
 
     erg = np.array(kombis)[list(np.array(best_kombis)[best_kombis_2])]
     return erg
-# =============================================================================
-# Random Forest
-# =============================================================================
-# TOOD
-# aktuell noch nur auf K NK
+### =============================================================================
+### Random Forest
+### =============================================================================
 
-# def getRF(dtm_train, dtm_test, y_train, y_test):
-    
-#     rfc =  RandomForestClassifier(n_estimators=100, verbose=True)
 
-#     rf_fit = rfc.fit(dtm_train.T, y_train)
-
-#     vorhersagen = rf_fit.predict_proba(dtm_test.T)
-#     wkeiten_k = list(pd.DataFrame(vorhersagen)[0])
-
-#     y_pred = []
-#     for i in range(len(y_test)):
-#         if wkeiten_k[i] < 0.5:
-#             y_pred.append('N')
-#         else:
-#             y_pred.append('K')
-
-#     cm = pd.DataFrame(confusion_matrix(y_test, y_pred))
-#     # cm = setColRowNames(cm, ['als NK erkannt', 'als K erkannt'], ['NK', 'K'])
-#     return(cm, wkeiten_k, y_pred)
 
 def getRF(dtm_train, dtm_test, y_train, y_test, neval, mfval):
-    if mfval: # max feat auf deafault
+    if mfval: # max features to default
         random.seed(1802)
         rfc = RandomForestClassifier(n_estimators= neval, verbose=True)
     else:
@@ -1702,57 +1581,57 @@ def getRF(dtm_train, dtm_test, y_train, y_test, neval, mfval):
         rfc = RandomForestClassifier(n_estimators= neval, max_features = mfval, verbose=True)
     rf_fit = rfc.fit(dtm_train, y_train)
 
-    vorhersagen = rf_fit.predict(dtm_test)
-    vorhersagen_wk = rf_fit.predict_proba(dtm_test)
+    predictions = rf_fit.predict(dtm_test)
+    predictions_proba = rf_fit.predict_proba(dtm_test)
 
-    return(vorhersagen_wk, vorhersagen)
+    return(predictions_proba, predictions)
 
 def RFAll(dtm_train, dtm_test, y_train, y_test, X_test_ind, neval = 100, 
           mfval = True, threshold_RF = False):
     '''
-    y_train und y_test in 1 0 kodierung!!!
+    y_train and y_test in binary (0/1) encoding!!!
 
     '''
     
-    [RF_wkeiten, RF_pred] = getRF(dtm_train, dtm_test, y_train, y_test, neval, mfval)
+    [RF_probs, RF_pred] = getRF(dtm_train, dtm_test, y_train, y_test, neval, mfval)
 
-    mydf = pd.DataFrame([X_test_ind, y_test, RF_wkeiten[:,1]]).T
-    mydf.columns = ['Dokument', 'wahre Klasse', 'Wkeit pos']
-    mydf = mydf.sort_values('Dokument')
+    mydf = pd.DataFrame([X_test_ind, y_test, RF_probs[:,1]]).T
+    mydf.columns = ['Document', 'true class', 'probability positive']
+    mydf = mydf.sort_values('Document')
     if threshold_RF == False:
-        [cm, sensi, spezi, richtigkl] = getWerteKlassi(y_test, RF_pred)
+        [cm, sensi, speci, accuracy] = getWerteKlassi(y_test, RF_pred)
         y_pred = RF_pred
     else:
-        y_pred = getPred(RF_wkeiten[:,1], threshold_RF)
-        [cm, sensi, spezi, richtigkl] = getWerteKlassi(y_test, y_pred)
+        y_pred = getPred(RF_probs[:,1], threshold_RF)
+        [cm, sensi, speci, accuracy] = getWerteKlassi(y_test, y_pred)
     
-    return(cm, sensi, spezi, richtigkl, y_pred, mydf)
+    return(cm, sensi, speci, accuracy, y_pred, mydf)
 
 
 
-def ergtable(y_test, y_pred, true_wkeiten):
+def ergtable(y_test, y_pred, true_probs):
     '''
-    gibt eine übersichtliche Ergebnistafel für den RF
+    returns a clear results table for the RF
     
     Inputs:     y_test
                 y_pred
-                true_wkeiten (teilw aus rfBerechnen)
+                true_probs (partly from rfBerechnen)
     
     Outputs:    erg - 
 
     '''
     erg = pd.DataFrame()
-    erg['wahrer GeVo'] = y_test
-    # erg['Wkeit dafür'] = true_wkeiten
-    erg['prog. GeVo'] = y_pred
-    erg['richtig'] = [0] * len(y_test)
-    erg['richtig'][myVektorGleich(y_test,y_pred)] = 1
+    erg['true label'] = y_test
+    # erg['probability'] = true_probs
+    erg['predicted label'] = y_pred
+    erg['correct'] = [0] * len(y_test)
+    erg['correct'][myvectorGleich(y_test,y_pred)] = 1
     return(erg)
 
-def getPred(wkeiten, threshold):
+def getPred(probs, threshold):
     y_pred = []
-    for i in range(len(wkeiten)):
-        if wkeiten[i] >= threshold:
+    for i in range(len(probs)):
+        if probs[i] >= threshold:
             y_pred.append(1)
         else:
             y_pred.append(0)
@@ -1766,8 +1645,8 @@ def getSVM(dtm_train, dtm_test, y_train, y_test):
     
     Inputs:     dtm_train
                 dtm_test
-                y_train (1 0 kodiert)
-                y_test (1 0 kodiert)
+                y_train (binary encoded 0/1)
+                y_test (binary encoded 0/1)
                 
     Outputs:    result
                 cm
@@ -1790,117 +1669,29 @@ def getSVM(dtm_train, dtm_test, y_train, y_test):
 
 def SVMAll(dtm_train, dtm_test, y_train, y_test, X_test_ind, threshold_SVM = False):
     '''
-    y_train und y_test in 1 0 kodierung!!!
+    y_train and y_test in binary (0/1) encoding!!!
 
     '''
     
-    [SVM_pred, SVM_wkeiten] = getSVM(dtm_train, dtm_test, y_train, y_test)
+    [SVM_pred, SVM_probs] = getSVM(dtm_train, dtm_test, y_train, y_test)
 
-    mydf = pd.DataFrame([X_test_ind, y_test, SVM_wkeiten[1]]).T
-    mydf.columns = ['Dokument', 'wahre Klasse', 'Wkeit pos']
-    mydf = mydf.sort_values('Dokument')
+    mydf = pd.DataFrame([X_test_ind, y_test, SVM_probs[1]]).T
+    mydf.columns = ['Document', 'true class', 'probability positive']
+    mydf = mydf.sort_values('Document')
 
-    [cm, sensi, spezi, richtigkl] = getWerteKlassi(y_test, SVM_pred)
+    [cm, sensi, speci, accuracy] = getWerteKlassi(y_test, SVM_pred)
     if threshold_SVM == False:
-        [cm, sensi, spezi, richtigkl] = getWerteKlassi(y_test, SVM_pred)
+        [cm, sensi, speci, accuracy] = getWerteKlassi(y_test, SVM_pred)
         y_pred = SVM_pred
     else:
-        y_pred = getPred(SVM_wkeiten[1], threshold_SVM)
-        [cm, sensi, spezi, richtigkl] = getWerteKlassi(y_test, y_pred)
+        y_pred = getPred(SVM_probs[1], threshold_SVM)
+        [cm, sensi, speci, accuracy] = getWerteKlassi(y_test, y_pred)
 
-    return(cm, sensi, spezi, richtigkl, y_pred, mydf)
-
-# def getSVM(dtm_train, dtm_test, y_train, y_test):
-#     '''
-    
-#     Inputs:     dtm_train
-#                 dtm_test
-#                 y_train (1 0 kodiert)
-#                 y_test (1 0 kodiert)
-                
-#     Outputs:    result
-#                 cm
-
-#     '''
-#     warnings.filterwarnings('ignore')
-#     model = svm.SVC(C=1, kernel='rbf', gamma='scale', probability = True)
-  
-#     model.fit(dtm_train, y_train)
-    
-#     # Make prediction
-#     prediction = model.predict(dtm_test)
-#     prediction_proba = model.predict_proba(dtm_test)
-#     pred = prediction.tolist()
-#     pred_proba = pd.DataFrame(prediction_proba.tolist())
-
-#     cm = confusion_matrix(y_test, pred)
-#     # cm = setColRowNames(cm, ['als K erkannt', 'als NK erkannt'], ['K', 'NK'])
-
-#     return(cm, pred, pred_proba)
-
-
-
-
-# def getSVM(dtm_train, dtm_test, y_train, y_test):
-#     '''
-    
-#     Inputs:     dtm_train
-#                 dtm_test
-#                 y_train (1 0 kodiert)
-#                 y_test (1 0 kodiert)
-                
-#     Outputs:    result
-#                 cm
-
-#     '''
-#     warnings.filterwarnings('ignore')
-#     model = svm.SVC(C=1, kernel='rbf', gamma='scale', probability = True)
-  
-#     model.fit(dtm_train, y_train)
-    
-#     # Make prediction
-#     prediction = model.predict(dtm_test)
-#     prediction_proba = model.predict_proba(dtm_test)
-#     pred = prediction.tolist()
-#     pred_proba = pd.DataFrame(prediction_proba.tolist())
-
-#     cm = confusion_matrix(y_test, pred)
-#     # cm = setColRowNames(cm, ['als K erkannt', 'als NK erkannt'], ['K', 'NK'])
-
-#     return(cm, pred, pred_proba)
-
-# def getSVM(X_train, X_test, y_train, y_test):
-#     '''
-    
-#     Inputs:     X_train
-#                 X_test
-#                 y_train
-#                 y_test
-                
-#     Outputs:    result
-#                 cm
-
-#     '''
-#     warnings.filterwarnings('ignore')
-#     model = svm.SVC(C=1, kernel='rbf', gamma=1)
-#     model.fit(X_train, y_train)
-    
-#     # Make prediction
-#     prediction = model.predict(X_test)
-    
-#     # Get results
-#     result = X_test
-#     result['contraceptive'] = y_test
-#     result['prediction'] = prediction.tolist()
-#     result.head()
-    
-#     cm = confusion_matrix(result['contraceptive'], result['prediction'])
-
-#     return(result, cm)
+    return(cm, sensi, speci, accuracy, y_pred, mydf)
 
 
 # =============================================================================
-# Extratrees
+# Extra Trees
 # =============================================================================
 
 def getET(X_train, X_test, y_train, y_test):
@@ -1911,8 +1702,8 @@ def getET(X_train, X_test, y_train, y_test):
                 y_train
                 y_test
                 
-    Outputs:    ypred
-                cm
+    Outputs:    y_pred
+                cm (confusion matrix)
 
     '''
     
@@ -1930,19 +1721,19 @@ def getET(X_train, X_test, y_train, y_test):
     return(y_pred, cm_ET)
 
 # =============================================================================
-# Plotfunktionen
+# Plot functions
 # =============================================================================
 
 
-def ROCFunc(y_test, y_pred, name, xlab = "1 - Spezifität", ylab = "Sensitivität"):
+def ROCFunc(y_test, y_pred, name, xlab = "1 - Specificity", ylab = "Sensitivity"):
     '''
-    berechnet ROC Kurve
+    computes ROC curve
     
     Inputs:     y_test
                 y_pred
                 
     Outputs:    auc 
-                Grafik
+                plot
 
     '''
     auc = metrics.roc_auc_score(y_test, y_pred)
@@ -1972,15 +1763,15 @@ def ROCFunc(y_test, y_pred, name, xlab = "1 - Spezifität", ylab = "Sensitivitä
     return(auc)
 
 
-def HistFuncK(daten, name, xlab = "Wahrscheinlichkeit für eine Kündigung", ylab = "Anzahl an Kündigungen"):
+def HistFuncK(daten, name, xlab = "Probability of termination", ylab = "Number of terminations"):
     '''
-    berechnet ROC Kurve
+    computes ROC curve
     
     Inputs:     y_test
                 y_pred
                 
     Outputs:    auc 
-                Grafik
+                plot
 
     '''
     matplotlib.rcParams['font.family'] = 'serif'
@@ -2000,15 +1791,15 @@ def HistFuncK(daten, name, xlab = "Wahrscheinlichkeit für eine Kündigung", yla
     plt.show()
     return()
 
-def HistFuncNK(daten, name, xlab = "Wahrscheinlichkeit für eine Kündigung", ylab = "Anzahl an anderen Dokumenten"):
+def HistFuncNK(daten, name, xlab = "Probability of termination", ylab = "Number of other documents"):
     '''
-    berechnet ROC Kurve
+    computes ROC curve
     
     Inputs:     y_test
                 y_pred
                 
     Outputs:    auc 
-                Grafik
+                plot
 
     '''
     matplotlib.rcParams['font.family'] = 'serif'
@@ -2028,7 +1819,7 @@ def HistFuncNK(daten, name, xlab = "Wahrscheinlichkeit für eine Kündigung", yl
     plt.show()
     return()
 
-def GiniFunc(daten, name, xlab = "Token, sortiert nach Gini - Index", ylab = "Gini - Index"):
+def GiniFunc(daten, name, xlab = "Token sorted by Gini index", ylab = "Gini index"):
     matplotlib.rcParams['font.family'] = 'serif'
     matplotlib.rcParams['font.style'] = 'normal'
     plt.figure(figsize=(7, 4), dpi=300)
@@ -2047,7 +1838,7 @@ def GiniFunc(daten, name, xlab = "Token, sortiert nach Gini - Index", ylab = "Gi
     return()
 
 
-def AnteileFunc(daten, name, xlab = "Token, sortiert nach Differenzen", ylab = "Differenz"):
+def AnteileFunc(daten, name, xlab = "Token sorted by differences", ylab = "Difference"):
     matplotlib.rcParams['font.family'] = 'serif'
     matplotlib.rcParams['font.style'] = 'normal'
     plt.figure(figsize=(7, 4), dpi=300)
@@ -2068,10 +1859,10 @@ def AnteileFunc(daten, name, xlab = "Token, sortiert nach Differenzen", ylab = "
 
 
 # =============================================================================
-# komplettfunc für RF und SVM (muss nur noch ein random.seed() vor)
+# complete function for RF and SVM (only random.seed() needs to be set beforehand)
 # =============================================================================
-# klgr TRUE: alle daten
-# klgr FALSE: kleine matrix
+# klgr TRUE: all data
+# klgr FALSE: small matrix
 def RFcomplete(grund, dtm_train, dtm_test, y_train, y_test, X_train_ind, X_test_ind, klgr = True):
     [cm_train, sensi_train, spezi_train, richtigkl_train, y_pred_train, 
      mydf_train] = RFAll(dtm_train, dtm_train, y_train, y_train, X_train_ind)
@@ -2090,25 +1881,25 @@ def RFcomplete(grund, dtm_train, dtm_test, y_train, y_test, X_train_ind, X_test_
         name5 = grund + 'hist_NK_RF_test_kl.png' 
         name6 = grund + 'roc_RF_test_kl.png'
               
-    wkeiten_pos = mydf_train['Wkeit pos'][mydf_train['wahre Klasse'] == 1]
+    wkeiten_pos = mydf_train['probability positive'][mydf_train['true class'] == 1]
     HistFuncK(wkeiten_pos, name1)
-    wkeiten_neg = np.sort(mydf_train['Wkeit pos'][mydf_train['wahre Klasse'] == 0])
+    wkeiten_neg = np.sort(mydf_train['probability positive'][mydf_train['true class'] == 0])
     HistFuncNK(wkeiten_neg, name2)
     
-    ROCFunc(y_train, mydf_train['Wkeit pos'], name3) 
+    ROCFunc(y_train, mydf_train['probability positive'], name3) 
 
-    th = pd.DataFrame(metrics.roc_curve(y_train, mydf_train['Wkeit pos'])).T
-    th.columns = ['false_positive rate', 'true_positive_rate', 'threshold']
-    th['spezi'] = 1 - th['false_positive rate']
-    th['sensi + spezi'] = th['spezi'] + th['true_positive_rate']
+    th = pd.DataFrame(metrics.roc_curve(y_train, mydf_train['probability positive'])).T
+    th.columns = ['false_positive rate', 'true_positive rate', 'threshold']
+    th['specificity'] = 1 - th['false_positive rate']
+    th['sensitivity + specificity'] = th['specificity'] + th['true_positive rate']
     
-    ts = list(th['threshold'][th['sensi + spezi'] == max(th['sensi + spezi'])])[0]                  
+    ts = list(th['threshold'][th['sensitivity + specificity'] == max(th['sensitivity + specificity'])])[0]                  
 
     if min(wkeiten_pos) > max(wkeiten_neg):
         random.seed(1802)
         ts = random.uniform(max(wkeiten_neg), min(wkeiten_pos))
     
-    y_pred_train_new = getPred(mydf_train['Wkeit pos'], ts)
+    y_pred_train_new = getPred(mydf_train['probability positive'], ts)
     [cm_train_new, sensi_train_new, spezi_train_new,
      richtigkl_train_new] = getWerteKlassi(y_train, y_pred_train_new)
 
@@ -2116,12 +1907,12 @@ def RFcomplete(grund, dtm_train, dtm_test, y_train, y_test, X_train_ind, X_test_
      mydf_test] = RFAll(dtm_train, dtm_test, y_train, y_test, X_test_ind,
                            threshold_RF = ts)
                            
-    wkeiten_pos = mydf_test['Wkeit pos'][mydf_test['wahre Klasse'] == 1]
+    wkeiten_pos = mydf_test['probability positive'][mydf_test['true class'] == 1]
     HistFuncK(wkeiten_pos, name4)
-    wkeiten_neg = np.sort(mydf_test['Wkeit pos'][mydf_test['wahre Klasse'] == 0])
+    wkeiten_neg = np.sort(mydf_test['probability positive'][mydf_test['true class'] == 0])
     HistFuncNK(wkeiten_neg, name5)
     
-    ROCFunc(y_test, mydf_test['Wkeit pos'], name6) 
+    ROCFunc(y_test, mydf_test['probability positive'], name6) 
 
     return(cm_train, sensi_train, spezi_train, richtigkl_train, y_pred_train, 
            mydf_train, ts,
@@ -2148,25 +1939,25 @@ def SVMcomplete(grund, dtm_train, dtm_test, y_train, y_test, X_train_ind, X_test
         name5 = grund + '_hist_NK_SVM_test_kl.png' 
         name6 = grund + '_roc_SVM_test_kl.png'
               
-    wkeiten_pos = mydf_train['Wkeit pos'][mydf_train['wahre Klasse'] == 1]
+    wkeiten_pos = mydf_train['probability positive'][mydf_train['true class'] == 1]
     HistFuncK(wkeiten_pos, name1)
-    wkeiten_neg = np.sort(mydf_train['Wkeit pos'][mydf_train['wahre Klasse'] == 0])
+    wkeiten_neg = np.sort(mydf_train['probability positive'][mydf_train['true class'] == 0])
     HistFuncNK(wkeiten_neg, name2)
     
-    ROCFunc(y_train, mydf_train['Wkeit pos'], name3) 
+    ROCFunc(y_train, mydf_train['probability positive'], name3) 
 
-    th = pd.DataFrame(metrics.roc_curve(y_train, mydf_train['Wkeit pos'])).T
-    th.columns = ['false_positive rate', 'true_positive_rate', 'threshold']
-    th['spezi'] = 1 - th['false_positive rate']
-    th['sensi + spezi'] = th['spezi'] + th['true_positive_rate']
+    th = pd.DataFrame(metrics.roc_curve(y_train, mydf_train['probability positive'])).T
+    th.columns = ['false_positive rate', 'true_positive rate', 'threshold']
+    th['specificity'] = 1 - th['false_positive rate']
+    th['sensitivity + specificity'] = th['specificity'] + th['true_positive rate']
     
-    ts = list(th['threshold'][th['sensi + spezi'] == max(th['sensi + spezi'])])[0]                  
+    ts = list(th['threshold'][th['sensitivity + specificity'] == max(th['sensitivity + specificity'])])[0]                  
 
     if min(wkeiten_pos) > max(wkeiten_neg):
         random.seed(1802)
         ts = random.uniform(max(wkeiten_neg), min(wkeiten_pos))
     
-    y_pred_train_new = getPred(mydf_train['Wkeit pos'], ts)
+    y_pred_train_new = getPred(mydf_train['probability positive'], ts)
     [cm_train_new, sensi_train_new, spezi_train_new,
      richtigkl_train_new] = getWerteKlassi(y_train, y_pred_train_new)
 
@@ -2174,63 +1965,21 @@ def SVMcomplete(grund, dtm_train, dtm_test, y_train, y_test, X_train_ind, X_test
      mydf_test] = SVMAll(dtm_train, dtm_test, y_train, y_test, X_test_ind,
                            threshold_SVM = ts)
                            
-    wkeiten_pos = mydf_test['Wkeit pos'][mydf_test['wahre Klasse'] == 1]
+    wkeiten_pos = mydf_test['probability positive'][mydf_test['true class'] == 1]
     HistFuncK(wkeiten_pos, name4)
-    wkeiten_neg = np.sort(mydf_test['Wkeit pos'][mydf_test['wahre Klasse'] == 0])
+    wkeiten_neg = np.sort(mydf_test['probability positive'][mydf_test['true class'] == 0])
     HistFuncNK(wkeiten_neg, name5)
     
-    ROCFunc(y_test, mydf_test['Wkeit pos'], name6) 
+    ROCFunc(y_test, mydf_test['probability positive'], name6) 
 
     return(cm_train, sensi_train, spezi_train, richtigkl_train, y_pred_train, 
            mydf_train, ts,
            cm_train_new, sensi_train_new, spezi_train_new, richtigkl_train_new,
            y_pred_train_new,
            cm_test, sensi_test, spezi_test, richtigkl_test, y_pred_test,
-           mydf_test)  
+           mydf_test)
 
-# def SVMcomplete(dtm_train, dtm_test, y_train, y_test, X_train_ind, X_test_ind):
-#     [cm_train, sensi_train, spezi_train, richtigkl_train, y_pred_train, 
-#      mydf_train] = SVMAll(dtm_train, dtm_train, y_train, y_train, X_train_ind)
-                         
-#     wkeiten_pos = mydf_train['Wkeit pos'][mydf_train['wahre Klasse'] == 1]
-#     hist_k_train = plt.hist(wkeiten_pos)
-#     wkeiten_neg = np.sort(mydf_train['Wkeit pos'][mydf_train['wahre Klasse'] == 0])
-#     hist_nk_train = plt.hist(wkeiten_neg)
-    
-#     roc_train = ROCFunc(y_train, mydf_train['Wkeit pos'])                   
-
-#     th = pd.DataFrame(metrics.roc_curve(y_train, mydf_train['Wkeit pos'])).T
-#     th.columns = ['false_positive rate', 'true_positive_rate', 'threshold']
-#     th['spezi'] = 1 - th['false_positive rate']
-#     th['sensi + spezi'] = th['spezi'] + th['true_positive_rate']
-    
-#     ts = list(th['threshold'][th['sensi + spezi'] == max(th['sensi + spezi'])])[0]
-    
-#     if min(wkeiten_pos) > max(wkeiten_neg):
-#         random.seed(1802)
-#         ts = random.uniform(max(wkeiten_neg), min(wkeiten_pos))
-    
-    
-#     y_pred_train_new = getPred(mydf_train['Wkeit pos'], ts)
-#     [cm_train_new, sensi_train_new, spezi_train_new,
-#      richtigkl_train_new] = getWerteKlassi(y_train, y_pred_train_new)
-
-#     [cm_test, sensi_test, spezi_test, richtigkl_test, y_pred_test, 
-#      mydf_test] = SVMAll(dtm_train, dtm_test, y_train, y_test, X_test_ind,
-#                            threshold_SVM = ts)
-                          
-#     hist_k_test = plt.hist(mydf_test['Wkeit pos'][mydf_test['wahre Klasse'] == 1])
-#     hist_nk_test = plt.hist(np.sort(mydf_test['Wkeit pos'][mydf_test['wahre Klasse'] == 0]))
-     
-#     roc_test = ROCFunc(y_test, mydf_test['Wkeit pos']) 
-
-#     return(cm_train, sensi_train, spezi_train, richtigkl_train, y_pred_train, 
-#            mydf_train, hist_k_train, hist_nk_train, roc_train, ts,
-#            cm_train_new, sensi_train_new, spezi_train_new, richtigkl_train_new,
-#            y_pred_train_new,
-#            cm_test, sensi_test, spezi_test, richtigkl_test, y_pred_test,
-#            mydf_test, hist_k_test, hist_nk_test, roc_test)                  
-    
+                 
     
 def getEineKlass(x_true, fpr, bpr, rpr, tpr, kpr):
     f_x = list(set(fpr).intersection(x_true))
@@ -2256,20 +2005,20 @@ def getErgebnisse(y_pred_F, y_pred_B, y_pred_R, y_pred_T, X_test, y_test):
     
     ergdf = pd.DataFrame([[0] * 5] * 5)
     ergdf = setColRowNames(ergdf, 
-                            ['F wahr', 'B wahr', 'R wahr', 'T wahr', 'K wahr'],
-                            ['F klass', 'B klass', 'R klass', 'T klass', 'K klass'])
+                            ['F true', 'B true', 'R true', 'T true', 'K true'],
+                            ['F predicted', 'B predicted', 'R predicted', 'T predicted', 'K predicted'])
     
-    ergdf['F wahr'] = getEineKlass(f_true, f_pred, b_pred, r_pred, t_pred, k_pred)
-    ergdf['B wahr'] = getEineKlass(b_true, f_pred, b_pred, r_pred, t_pred, k_pred)
-    ergdf['R wahr'] = getEineKlass(r_true, f_pred, b_pred, r_pred, t_pred, k_pred)
-    ergdf['T wahr'] = getEineKlass(t_true, f_pred, b_pred, r_pred, t_pred, k_pred)
-    ergdf['K wahr'] = getEineKlass(k_true, f_pred, b_pred, r_pred, t_pred, k_pred)
+    ergdf['F true'] = getEineKlass(f_true, f_pred, b_pred, r_pred, t_pred, k_pred)
+    ergdf['B true'] = getEineKlass(b_true, f_pred, b_pred, r_pred, t_pred, k_pred)
+    ergdf['R true'] = getEineKlass(r_true, f_pred, b_pred, r_pred, t_pred, k_pred)
+    ergdf['T true'] = getEineKlass(t_true, f_pred, b_pred, r_pred, t_pred, k_pred)
+    ergdf['K true'] = getEineKlass(k_true, f_pred, b_pred, r_pred, t_pred, k_pred)
     
     ergdf = ergdf.T
     return(ergdf)
     
 # =============================================================================
-# damit dill funktioniert
+# required for dill to work
 # =============================================================================
 
 def delStoppw():
@@ -2277,6 +2026,7 @@ def delStoppw():
 
 def delWords():
     return 0
+
 def delNumbersNames():
     return 0
 
