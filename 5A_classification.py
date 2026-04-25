@@ -21,7 +21,7 @@ from sklearn.metrics import mean_squared_error  # lasso
 # https://laurenliz22.github.io/nlp_random_forest_and_neural_network_classifiers
 
 os.chdir(r'W:\your_folder\Python')
-from Funktionen import *
+from functions import *
 # =============================================================================
 # Read data & preprocessing
 # =============================================================================
@@ -65,7 +65,7 @@ createWC(' '.join(X_train_NC), stop_words_stem, 'cloudNC_1.png')
 # those that could be related to one of the GeVos (or explicitly do not
 # suggest a cancellation)
 
-[often_sl_C, often_sl_C_bi] = getHäufigeWörter(X_train_C)
+[often_sl_C, often_sl_C_bi] = getFreqWords(X_train_C)
 often_sl_C
 
 # german words relevant for Cancellations (monograms)
@@ -99,7 +99,7 @@ often_sl_sm_bi_C = set(often_sl_C_bi).difference(gevowords_c_bi)
 
 # german words which occur often in non-Cancellations
 
-[often_sl_NC, often_sl_NC_bi] = getHäufigeWörter(X_train_NC)
+[often_sl_NC, often_sl_NC_bi] = getFreqWords(X_train_NC)
 often_sl_NC
 
 gevowords_nc_mono = ['arbeitgeb', 'arbeitnehm', 'ausschluss', 'beitrag', 
@@ -174,7 +174,7 @@ c_bigrams = ['auszahl ruckkaufswert', 'auszahl ruckkaufwert',
 
 c_test = c_words + c_bigrams
 
-[inC, sumC, inNC, sumNC] =  getAnzahlen(c_words, X_train_C, X_train_NC)
+[inC, sumC, inNC, sumNC] =  getAmounts(c_words, X_train_C, X_train_NC)
 
 inCproc = [round(j/len(X_train_C) * 100, 2) for j in inC]
 inNCproc = [round(j/len(X_train_NC) * 100, 2) for j in inNC]
@@ -194,7 +194,7 @@ c_test_CNC.columns = ['token', 'in C', 'in C proc', 'in NC', 'in NC proc']
 
 # gekundigt is the only word stam, that occur more often in non-Cancellations than in Cancellations
 
-[inC_bi, sumC_bi, inNC_bi, sumNC_bi] =  getAnzahlen(c_bigrams, X_train_C, X_train_NC)
+[inC_bi, sumC_bi, inNC_bi, sumNC_bi] =  getAmounts(c_bigrams, X_train_C, X_train_NC)
 c_test_CNC_bi = pd.DataFrame([c_bigrams + ['In total'], inC_bi + [sumC_bi], inNC_bi + [sumNC_bi]]).T
 c_test_CNC_bi.columns = ['token', 'in C', 'in NC']
 c_test_CNC_bi
@@ -214,7 +214,7 @@ c_test_CNC_bi
 
 # therefore, consider the model with the k_words
 
-[cm_C, sensi_C, speci_C, rightcl_C, ypred_C] = getWerte(c_words, [], 
+[cm_C, sensi_C, speci_C, rightcl_C, ypred_C] = getValues(c_words, [], 
                                                            X_train, y_train)
 
 cm_C
@@ -230,7 +230,7 @@ rightcl_C # 0.9366729678638941
 c_words_wog = ['auszahl', 'kundig', 'kundigungsbestat', 'kundigungstermin',
               'ruckkaufswert', 'ruckkaufwert', 'teilkund']
 
-[cm_C_wog, sensi_C_wog, speci_C_wog, riightCl_C_og, ypred_C_og] = getWerte(C_words_wog, [], 
+[cm_C_wog, sensi_C_wog, speci_C_wog, riightCl_C_og, ypred_C_og] = getValues(C_words_wog, [], 
                                                            X_train, y_train)
 
 cm_C_og
@@ -262,15 +262,15 @@ nc_words = ['beitragsfreistell', 'beitragspaus','erhoh', 'geschutzt dat',
 
 # now consider only the documents that were incorrectly classified as cancellations,
 # the rest are classified correctly anyway  
-predC = myGleich(ypred_C_wog, 'C')
-actN = myGleich(y_train, 'N')
-actC = myGleich(y_train, 'C')
+predC = myEqual(ypred_C_wog, 'C')
+actN = myEqual(y_train, 'N')
+actC = myEqual(y_train, 'C')
 Nwrong = list(set(predC).intersection(actN))
 Cright = list(set(predC).intersection(actC))
 X_train_NC_wrong = list(np.array(X_train)[Nwrong])
 X_train_C_right = list(np.array(X_train)[Cright])
 
-[inC_right, sumC_right, inNK_wrong, sumNC_wrong] = getAnzahlen(nc_words, X_train_C_right, X_train_NC_wrong)
+[inC_right, sumC_right, inNK_wrong, sumNC_wrong] = getAmounts(nc_words, X_train_C_right, X_train_NC_wrong)
    
 nc_test_CNC = pd.DataFrame([nk_words + ['In total'], inC_right + [sumC_right], inNC_wrong + [sumNC_wrong]]).T
 nc_test_CNC.columns = ['token', 'in C', 'in NC']
@@ -296,7 +296,7 @@ nc_test_CNC
 
 ### model with beitragspaus, geschutzt dat and gesundheitsdat ==================
 
-[cm_bg, sensi_bg, speci_bg, rightcl_bg, ypred_bg] = getWerte(c_words_final, ['beitragspaus', 'geschutzt dat', 'gesundheitsdat'], 
+[cm_bg, sensi_bg, speci_bg, rightcl_bg, ypred_bg] = getValues(c_words_final, ['beitragspaus', 'geschutzt dat', 'gesundheitsdat'], 
                                                            X_train, y_train)
 
 cm_bg
@@ -305,9 +305,9 @@ cm_bg
 
 sensi_bg + speci_bg # 1.8836282125047947
 
-predC = myGleich(ypred_bg, 'C')
-actN = myGleich(y_train, 'N')
-actC = myGleich(y_train, 'C')
+predC = myEqual(ypred_bg, 'C')
+actN = myEqual(y_train, 'N')
+actC = myEqual(y_train, 'C')
 Nwrong = list(set(predK).intersection(actN))
 Cright = list(set(predK).intersection(actC))
 X_train_NC_wrong = list(np.array(X_train)[Nwrong])
@@ -315,7 +315,7 @@ X_train_C_right = list(np.array(X_train)[Cright])
 
 nc_bg = ['beitragsfreistell', 'erhoh',  'stell', 
          'versichert person', 'versicherungsnehm', 'weitergab', 'ubertrag']
-[inC_right, sumC_right, inNC_wrong, sumNC_wrong] = getAnzahlen(nc_bg, X_train_C_right, X_train_NC_wrong)
+[inC_right, sumC_right, inNC_wrong, sumNC_wrong] = getAmounts(nc_bg, X_train_C_right, X_train_NC_wrong)
    
 nc_test_CNC_bg = pd.DataFrame([nc_bg + ['In total'], inC_right + [sumC_right], inNC_wrong + [sumNC_wrong]]).T
 nc_test_CNC_bg.columns = ['token', 'in C', 'in NC']
@@ -341,7 +341,7 @@ len(X_train_NC)/len(X_train_C) # 8.62
 
 ### model with beitragspaus, geschutzt dat, gesundheitsdat, erhoh =============
 
-[cm_bge, sensi_bge, speci_bge, rightcl_bge, ypred_bge] = getWerte(c_words_final, ['beitragspaus', 'geschutzt dat', 'gesundheitsdat', 'erhoh'], 
+[cm_bge, sensi_bge, speci_bge, rightcl_bge, ypred_bge] = getValues(c_words_final, ['beitragspaus', 'geschutzt dat', 'gesundheitsdat', 'erhoh'], 
                                                            X_train, y_train)
 
 cm_bge
@@ -351,9 +351,9 @@ cm_bge
 sensi_bge + speci_bge # 1.8897943037974683
 
 
-predC = myGleich(ypred_bge, 'C')
-actN = myGleich(y_train, 'N')
-actC = myGleich(y_train, 'C')
+predC = myEqual(ypred_bge, 'C')
+actN = myEqual(y_train, 'N')
+actC = myEqual(y_train, 'C')
 Nwrong = list(set(predC).intersection(actN))
 Cright = list(set(predC).intersection(actC))
 X_train_NC_wrong = list(np.array(X_train)[Nwrong])
@@ -361,7 +361,7 @@ X_train_C_right = list(np.array(X_train)[Cright])
 
 nc_bge = ['beitragsfreistell', 'stell', 
          'versichert person', 'versicherungsnehm', 'weitergab', 'ubertrag']
-[inC_right, sumC_right, inNC_wrong, sumNC_wrong] = getAnzahlen(nc_bge, X_train_C_right, X_train_NC_wrong)
+[inC_right, sumC_right, inNC_wrong, sumNC_wrong] = getAmounts(nc_bge, X_train_C_right, X_train_NC_wrong)
    
 nk_test_CNC_bge = pd.DataFrame([nk_bge + ['In total'], inC_right + [sumC_right], inNC_wrong + [sumNC_wrong]]).T
 nk_test_CNC_bge.columns = ['token', 'in C', 'in NC']
@@ -384,7 +384,7 @@ nk_test_CNC_bge
 nc_words_final = ['beitragspaus', 'geschutzt dat', 'gesundheitsdat', 'erhoh']
 
 [cm_WS_train, sensi_WS_train, speci_WS_train, 
- rightcl_WS_train, ypred_WS_train] = getWerte(c_words_final, nc_words_final,  
+ rightcl_WS_train, ypred_WS_train] = getValues(c_words_final, nc_words_final,  
                                     X_train, y_train)
   
 cm_WS_train
@@ -401,7 +401,7 @@ rightcl_WS_train
 # 0.9606568998109641                                    
                                                 
 [cm_WS_test, sensi_WS_test, speci_WS_test, 
- rightcl_WS_test, ypred_WS_test] = getWerte(c_words_final, nc_words_final,  
+ rightcl_WS_test, ypred_WS_test] = getValues(c_words_final, nc_words_final,  
                                     X_test, y_test)       
                             
 cm_WS_test
@@ -489,8 +489,8 @@ rightcl_RF_train # 0.9419831223628692
  
 probs_pos_RF_train = mydf_RF_train['Prob pos'][mydf_RF_train['real class'] == 1]
 probs_neg_RF_train = mydf_RF_train['Prob pos'][mydf_RF_train['real class'] == 0]           
-HistFuncK(probs_pos_RF_train, 'hist_C_RF_train.png')
-HistFuncNK(probs_neg_RF_train, 'hist_NC_RF_train.png')
+HistFuncC(probs_pos_RF_train, 'hist_C_RF_train.png')
+HistFuncNC(probs_neg_RF_train, 'hist_NC_RF_train.png')
 
 ROCFunc(y_train_10, mydf_RF_train['Prob pos'], 'ROC_RF_train.png')                   
 auc_RF_train = metrics.roc_auc_score(y_train_10, mydf_RF_train['Prob pos'])             
@@ -527,8 +527,8 @@ rightcl_RF_test  # 0.5022050716648291
 
 probs_pos_RF_test = mydf_RF_test['Prob pos'][mydf_RF_test['real class'] == 1]
 probs_neg_RF_test = mydf_RF_test['Prob pos'][mydf_RF_test['real class'] == 0]
-HistFuncK(probs_pos_RF_test, 'hist_K_RF_test.png')
-HistFuncNK(probs_neg_RF_test, 'hist_NK_RF_test.png')
+HistFuncC(probs_pos_RF_test, 'hist_K_RF_test.png')
+HistFuncNC(probs_neg_RF_test, 'hist_NK_RF_test.png')
 
 ROCFunc(y_test_10, mydf_RF_test['Prob pos'], 'ROC_RF_test.png')                  
 auc_RF_test = metrics.roc_auc_score(y_test_10, mydf_RF_test['Prob pos'])    
@@ -550,8 +550,8 @@ rightcl_RF_train_sm #  0.9564873417721519
 
 probs_pos_RF_train_sm = mydf_RF_train_sm['Prob pos'][mydf_RF_train_sm['real class'] == 1]
 probs_neg_RF_train_sm = mydf_RF_train_sm['Prob pos'][mydf_RF_train_sm['real class'] == 0]           
-HistFuncK(probs_pos_RF_train_sm, 'hist_C_RF_train_sm.png')
-HistFuncNK(probs_neg_RF_train_sm, 'hist_NC_RF_train_sm.png')
+HistFuncC(probs_pos_RF_train_sm, 'hist_C_RF_train_sm.png')
+HistFuncNC(probs_neg_RF_train_sm, 'hist_NC_RF_train_sm.png')
 
 ROCFunc(y_train_small, mydf_RF_train_sm['Prob pos'], 'ROC_RF_train_sm.png')                  
 auc_RF_train_sm = metrics.roc_auc_score(y_train_small, mydf_RF_train_sm['Prob pos'])             
@@ -571,7 +571,7 @@ if min(probs_pos_RF_train_sm) > max(probs_neg_RF_train_sm):
 
 y_pred_RF_train_sm_new = getPred(mydf_RF_train_sm['Prob pos'], ts_sm_RF)
 [cm_RF_train_sm_new, sensi_RF_train_sm_new, speci_RF_train_sm_new,
- rightcl_RF_train_sm_new] = getWerteKlassi(y_train_small, y_pred_RF_train_sm_new)
+ rightcl_RF_train_sm_new] = getValuesClass(y_train_small, y_pred_RF_train_sm_new)
 
 # same as above
 
@@ -591,8 +591,8 @@ rightcl_RF_test_sm  # 0.9696802646085998
 
 probs_pos_RF_test_sm = mydf_RF_test_sm['Prob pos'][mydf_RF_test_sm['real class'] == 1]
 probs_neg_RF_test_sm = mydf_RF_test_sm['Prob pos'][mydf_RF_test_sm['real class'] == 0]
-HistFuncK(probs_pos_RF_test_sm, 'hist_K_RF_test_sm.png')
-HistFuncNK(probs_neg_RF_test_sm, 'hist_NK_RF_test_sm.png')
+HistFuncC(probs_pos_RF_test_sm, 'hist_K_RF_test_sm.png')
+HistFuncNC(probs_neg_RF_test_sm, 'hist_NK_RF_test_sm.png')
 
 ROCFunc(y_test_small, mydf_RF_test_sm['Prob pos'], 'ROC_RF_test_sm.png')                  
 auc_RF_test_sm = metrics.roc_auc_score(y_test_small, mydf_RF_test_sm['Prob pos'])    
@@ -645,8 +645,8 @@ rightcl_SVM_train_sm # 0.9484001406469761
 
 probs_pos_SVM_train_sm = mydf_SVM_train_sm['Prob pos'][mydf_SVM_train_sm['real class'] == 1]
 probs_neg_SVM_train_sm = mydf_SVM_train_sm['Prob pos'][mydf_SVM_train_sm['real class'] == 0]           
-HistFuncK(probs_pos_SVM_train_sm, 'hist_C_SVM_train_sm.png')
-HistFuncNK(probs_neg_SVM_train_sm, 'hist_NC_SVM_train_sm.png')
+HistFuncC(probs_pos_SVM_train_sm, 'hist_C_SVM_train_sm.png')
+HistFuncNC(probs_neg_SVM_train_sm, 'hist_NC_SVM_train_sm.png')
 
 ROCFunc(y_train_small, mydf_SVM_train_sm['Prob pos'], 'ROC_SVM_train_sm.png')                 
 auc_SVM_train_sm = metrics.roc_auc_score(y_train_small, mydf_SVM_train_sm['Prob pos'])             
@@ -666,7 +666,7 @@ if min(probs_pos_SVM_train_sm) > max(probs_neg_SVM_train_sm):
 
 y_pred_SVM_train_sm_new = getPred(mydf_SVM_train_sm['Prob pos'], ts_sm_SVM)
 [cm_SVM_train_sm_new, sensi_SVM_train_sm_new, speci_SVM_train_sm_new,
- rightcl_SVM_train_sm_new] = getWerteKlassi(y_train_small, y_pred_SVM_train_sm_new)
+ rightcl_SVM_train_sm_new] = getValuesClass(y_train_small, y_pred_SVM_train_sm_new)
 
 cm_SVM_train_sm_new
 # array([[3504,  288],
@@ -693,8 +693,8 @@ rightcl_SVM_test_sm # 0.9636163175303197
 
 probs_pos_SVM_test_sm = mydf_SVM_test_sm['Prob pos'][mydf_SVM_test_sm['real class'] == 1]
 probs_neg_SVM_test_sm = mydf_SVM_test_sm['Prob pos'][mydf_SVM_test_sm['real class'] == 0]
-HistFuncK(probs_pos_SVM_test_sm, 'hist_C_SVM_test_sm.png')
-HistFuncNK(probs_neg_SVM_test_sm, 'hist_NC_SVM_test_sm.png')
+HistFuncC(probs_pos_SVM_test_sm, 'hist_C_SVM_test_sm.png')
+HistFuncNC(probs_neg_SVM_test_sm, 'hist_NC_SVM_test_sm.png')
 
 ROCFunc(y_test_small, mydf_SVM_test_sm['Prob pos'], 'ROC_SVM_test_sm.png')          
                   
@@ -720,8 +720,8 @@ rightcl_SVM_train # 0.814873417721519
 
 probs_pos_SVM_train = mydf_SVM_train['Prob pos'][mydf_SVM_train['real class'] == 1]
 probs_neg_SVM_train = mydf_SVM_train['Prob pos'][mydf_SVM_train['real class'] == 0]           
-HistFuncK(probs_pos_SVM_train, 'hist_K_SVM_train.png')
-HistFuncNK(probs_neg_SVM_train, 'hist_NK_SVM_train.png')
+HistFuncC(probs_pos_SVM_train, 'hist_K_SVM_train.png')
+HistFuncNC(probs_neg_SVM_train, 'hist_NK_SVM_train.png')
 
 ROCFunc(y_train_10, mydf_SVM_train['Prob pos'], 'ROC_SVM_train.png')                  
 auc_SVM_train = metrics.roc_auc_score(y_train_10, mydf_SVM_train['Prob pos'])             
@@ -741,7 +741,7 @@ if min(probs_pos_SVM_train) > max(probs_neg_SVM_train):
 
 y_pred_SVM_train_new = getPred(mydf_SVM_train['Prob pos'], ts_SVM)
 [cm_SVM_train_new, sensi_SVM_train_new, speci_SVM_train_new,
- rightcl_SVM_train_new] = getWerteKlassi(y_train_10, y_pred_SVM_train_new)
+ rightcl_SVM_train_new] = getValuesClass(y_train_10, y_pred_SVM_train_new)
 
 cm_SVM_train_new
 # array([[3792,    0],
@@ -773,8 +773,8 @@ rightcl_SVM_test # 0.7885887541345094
 
 probs_pos_SVM_test = mydf_SVM_test['Prob pos'][mydf_SVM_test['real class'] == 1]
 probs_neg_SVM_test = mydf_SVM_test['Prob pos'][mydf_SVM_test['real class'] == 0]
-HistFuncK(probs_pos_SVM_test, 'hist_C_SVM_test.png')
-HistFuncNK(probs_neg_SVM_test, 'hist_NC_SVM_test.png')
+HistFuncC(probs_pos_SVM_test, 'hist_C_SVM_test.png')
+HistFuncNC(probs_neg_SVM_test, 'hist_NC_SVM_test.png')
 
 ROCFunc(y_test_10, mydf_SVM_test['Prob pos'], 'ROC_SVM_test.png')    
                    
