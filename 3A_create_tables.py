@@ -11,7 +11,7 @@ import dill
 from sklearn.metrics import confusion_matrix
 
 os.chdir(r'W:\your_folder\Python')
-from Funktionen import *
+from functions import *
 
 # =============================================================================
 # Load texts
