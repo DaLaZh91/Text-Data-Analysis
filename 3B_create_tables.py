@@ -13,7 +13,7 @@ import time
 from sklearn.metrics import confusion_matrix
 
 os.chdir(r'W:\your_folder\Python')
-from Funktionen import *
+from functions import *
 
 
 # =============================================================================
@@ -67,7 +67,7 @@ time_df_sorted = time_df.sort_values('pdfname')
 
 txt_CNC = list(time_df_sorted['texts'])
 
-cust['text'] = createTable(seitenZusammen(txt_CNC))[4::5]
+cust['text'] = createTable(pagesTogether(txt_CNC))[4::5]
 C_compare = createTable(C_no_duplicates)[4::5]
 
 # need the indices of the cancellations that are still present for the cust table
@@ -102,7 +102,7 @@ del(cs_overview['sub_group'], cs_overview['main_group'])
 prog_reasons = []
 for i in range(len(cs_overview)):
     try:
-        prog_reasons.append(reasonComparison(cs_overview['text'][i]))
+        prog_reasons.append(reasonCompare(cs_overview['text'][i]))
     except:
         prog_reasons.append('nan')
         
