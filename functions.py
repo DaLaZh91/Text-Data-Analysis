@@ -447,7 +447,7 @@ def findEinzelToken(possibilities):
 
 def countToken(possibilities):
     '''
-    counts how often each distinct token occurs in the vector mglkeiten
+    counts how often each distinct token occurs in the vector possibilities
     
     Inputs:     possibilities - vector with possible names, VNRs, etc., whose
                             frequencies should be determined
@@ -473,11 +473,11 @@ def countToken(possibilities):
 # This is done first, because the characters are still important here.
 # After this, they are removed (for names, GeVo, etc.)
 
-def vnrFinden(schreiben):
+def vnrFinden(document):
     '''
     searches typical positions for insurance numbers
     
-    Inputs:     schreiben
+    Inputs:     document
     
     Outputs:    possible VNRs
     '''
@@ -485,89 +485,86 @@ def vnrFinden(schreiben):
                  'Nr.:', 'Nr', 'VNR', 'VNR:', 'Versicherungsnummer:', 
                  'VSNR:', 'VSNR', 'VSNR.', 'VSNR,','VSNR.:']
     
-    return findeFunc(schreiben, vnr_token, 2)
+    return findeFunc(document, vnr_token, 2)
 
 
-def vnrBauen(schreiben):
+def vnrBauen(document):
     '''
     tries to construct the VNR and stops when it ends
     
-    Inputs:     schreiben
+    Inputs:     document
     
     Outputs:    possible VNRs
     '''
-    mglkeiten = vnrFinden(schreiben)
-    vgl_vector = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '/', '.',
+    possibilities = vnrFinden(document)
+    comp_vector = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '/', '.',
                   ',', '-', '|']
-    neu_mgl = mglkeiten # keep the same structure as mglkeiten
+    new_poss = possibilities # keep the same structure as possibilities
     # loop over the different occurrences of a VNR
-    for k in range(len(mglkeiten)):
+    for k in range(len(possibilities)):
         # loop over the different tokens that are extracted
-        for j in range(len(mglkeiten[k])): # always the same
+        for j in range(len(possibilities[k])): # always the same
             # possibly loop over the first two elements to check whether
             # it is actually a number?
-            a_mgl = neu_mgl[k][j]
-            if len(a_mgl) > 0:
-                for i in range(len(a_mgl)):
+            a_poss = new_poss[k][j]
+            if len(a_poss) > 0:
+                for i in range(len(a_poss)):
                     # check if something occurs that is not a digit or similar
-                    if a_mgl[i] not in vgl_vector:
-                            a_mgl = a_mgl.replace(a_mgl[i], 'X')
-            neu_mgl[k][j] = a_mgl
+                    if a_poss[i] not in comp_vector:
+                            a_poss = a_poss.replace(a_poss[i], 'X')
+            new_poss[k][j] = a_poss
     # delete from where it starts with 2 X somewhere & if it is empty
-    str_zsm = [None] * len(mglkeiten)
-    for k in range(len(mglkeiten)):
-        for j in range(len(mglkeiten[k])): 
-                if 'X' in neu_mgl[k][j] or neu_mgl[k][j] == []:
-                    neu_mgl[k][j] = ''
+    str_tog = [None] * len(possibilities)
+    for k in range(len(possibilities)):
+        for j in range(len(possibilities[k])): 
+                if 'X' in new_poss[k][j] or new_poss[k][j] == []:
+                    new_poss[k][j] = ''
         # concatenate what remains for each VNR
-        str_zsm[k] = "".join(neu_mgl[k])       
-    return str_zsm
+        str_tog[k] = "".join(new_poss[k])       
+    return str_tog
 
 
 
-def searchZahlenzeichenketten(schreiben):
+def searchZahlenzeichenketten(document):
     '''
-    finds numeric character strings (with the characters and digits from vgl_vector)
+    finds numeric character strings (with the characters and digits from comp_vector)
     in a document
     
-    Inputs:      schreiben - non-tokenized document
+    Inputs:      document - non-tokenized document
     
-    Outputs:    zahlentoken - the numeric tokens that occur in the document
+    Outputs:    numbertoken - the numeric tokens that occur in the document
                 numbind - the indices of these numeric tokens
 
     '''
-    vgl_vector = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '/', '.',
+    comp_vector = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '/', '.',
                   ',', '-', '|']
-    schreibsplit = schreiben.split()
-    schreibsplit
+    docsplit = document.split()
+    docsplit
     isdig = []
-    for i in range(len(schreibsplit)):
-        # isdig.append(schreibsplit[i].isdigit())
-        token = schreibsplit[i]
+    for i in range(len(docsplit)):
+        # isdig.append(docsplit[i].isdigit())
+        token = docsplit[i]
         for j in range(len(token)):
-            if (token[j] not in vgl_vector):
+            if (token[j] not in comp_vector):
                 isdig.append(False)
                 break;
             elif (j == (len(token) - 1)):
                 isdig.append(True)
     numbind = myGleich(isdig, True)
-    zahlentoken = np.array(schreibsplit)[numbind]
-    return(zahlentoken, numbind)
+    numbertoken = np.array(docsplit)[numbind]
+    return(numbertoken, numbind)
 
-
-# TODO
-# check again what happens here
-def searchVNR(schreiben):
+def searchVNR(document):
     '''
     finds VNRs by combining numeric tokens from 
     searchZahlenzeichenketten
     
-    Inputs:     schreiben - non-tokenized document
+    Inputs:     document - non-tokenized document
     
-    Outputs:    zt - 
+    Outputs:    nt - 
 
     '''
-    zahlentoken, numbind = searchZahlenzeichenketten(schreiben)
+    numbertoken, numbind = searchZahlenzeichenketten(document)
     isnext = []
     for i in range(len(numbind) - 1):
         if (numbind[i] + 1 == numbind[i + 1]):
@@ -575,333 +572,317 @@ def searchVNR(schreiben):
         else:
             isnext.append(False)
     # combine those that are directly consecutive
-    zahlentoken = list(zahlentoken)
-    zt = zahlentoken
+    numbertoken = list(numbertoken)
+    nt = numbertoken
     for i in range(len(numbind) - 1):
         if (isnext[i] and not isnext[i + 1]):
-            # TODO 
-            # modify here so that index shifts caused by
-            # changes to zt within one loop iteration are
-            # considered in the next; this is currently not the case
-            zt[i:(i + 2)] = [''.join(zahlentoken[i:(i + 2)])]
-    return(zt)
+            nt[i:(i + 2)] = [''.join(numbertoken[i:(i + 2)])]
+    return(nt)
 
-    
-# TODO - additions needed: include searchVNR, Levenshtein, frequency
 # compares the VNRs
-def vnrVergleich(schreiben):
+def vnrVergleich(document):
     # checks
     '''
     compares the VNRs 
     
-    Inputs:     schreiben - non-tokenized document
+    Inputs:     document - non-tokenized document
     
-    Outputs:    ideally: VNR, otherwise currently (TO CHANGE!!) 'unclear VNR' and
+    Outputs:    ideally: VNR, otherwise currently 'unclear VNR' and
                 'no VNR found' (prints that, stores None for the latter cases)
     '''
     try: 
-        mgl_vnr = vnrBauen(schreiben)
-        vnr = mgl_vnr[0]
-        gleich = [None] * len(mgl_vnr)
-        for i in range(len(mgl_vnr)):
-            gleich[i] = bool(vnr == mgl_vnr[i])
-        if False not in gleich:
+        poss_vnr = vnrBauen(document)
+        vnr = poss_vnr[0]
+        equal = [None] * len(poss_vnr)
+        for i in range(len(poss_vnr)):
+            equal[i] = bool(vnr == poss_vnr[i])
+        if False not in equal:
             return vnr
         else:
             return ('ev ' + vnr)
-            # TODO 
-            # currently just return the first one with 'ev' in front,
-            # which is not necessarily the optimal solution
     except:
-        # TODO
-        # search for VNR after the name if none found in the text (header)
-        # maybe simply search for long numbers?
         return 'none found'
 
 
 ### remove punctuation =====================================================
 
-def delPunct(schreiben):
+def delPunct(document):
     # checks
     '''
     removes punctuation from the document
     
-    Inputs:     schreiben - NON-tokenized document
+    Inputs:     document - NON-tokenized document
     
     Outputs:    document without punctuation
 
     '''
     punctuation = list('!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~€°’‘“—«”£„‘©®»‚‚')
-    token_punctless =[token for token in schreiben if token not in punctuation]
+    token_punctless =[token for token in document if token not in punctuation]
     token_punctless = ''.join(token_punctless)
     return token_punctless
 
-def delPuncts(dok_list):
+def delPuncts(doc_list):
     # checks
     '''
     removes punctuation from all documents in dok_list
     
-    Inputs:     dok_list - list of non-tokenized documents
+    Inputs:     doc_list - list of non-tokenized documents
     
-    Outputs:    dok_list without punctuation
+    Outputs:    doc_list without punctuation
     '''
     new_list = []
-    for i in dok_list:
+    for i in doc_list:
         new_list.append(delPunct(i))
     return new_list
 
 ### convert all letters to lowercase =========================================
 
-def machLowercase(dok_list):
+def machLowercase(doc_list):
     # checks
     '''
     converts all letters to lowercase
     
-    Inputs:     dok_list - list of non-tokenized documents
+    Inputs:     doc_list - list of non-tokenized documents
     
     Outputs:    new_list - list of non-tokenized documents, completely
                            in lowercase
     '''
     new_list = []
-    for i in dok_list:
+    for i in doc_list:
         new_list.append(i.lower())
     return new_list
 
 ### Name ======================================================================
 
-def namenFinden(schreiben):
+def namenFinden(document):
     '''
     searches typical positions for names
     
-    Inputs:     schreiben - non-tokenized document
+    Inputs:     document - non-tokenized document
     
-    Outputs:    mgl_namen - possible names
+    Outputs:    poss_names - possible names
     '''
     punctuation = list('!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~€°’‘“—«”£„‘©®»')
     numbers = list('0123456789')
-    schreiben_lower = delPunct(schreiben).lower()
-    namen_token = ['grüßen', 'grüße', 'gruß', 'von', 'from']
-    schreiben_tok = schreiben_lower.split()
+    document_lower = delPunct(document).lower()
+    names_token = ['grüßen', 'grüße', 'gruß', 'von', 'from']
+    document_tok = document_lower.split()
     # since the name is often at the beginning of the letterhead:
-    stelle12 = schreiben_tok[0:2]
+    pos12 = document_tok[0:2]
     m = 2
-    mgl_namen = findeFunc(schreiben_lower, namen_token, m)
-    mgl_namen.append(stelle12)
+    poss_names = findeFunc(document_lower, names_token, m)
+    poss_names.append(pos12)
     todel = []
     # loop over all possible names to remove email addresses and numbers
-    nein_words = ['von', 'signal', 'iduna', 'signaliduna', 'kundenservice',
+    no_words = ['von', 'company_name', 'kundenservice',
                   'kundenberater', 'kundenberaterin', 'ihnen', 'der', 
                   'die', 'das', 'dem']
-    for i in range(len(mgl_namen)):
+    for i in range(len(poss_names)):
         for j in range(m): 
-            if mgl_namen[i][j] in nein_words:
+            if poss_names[i][j] in no_words:
                 todel.append(i)
                 break            
         # otherwise consider both parts separately and check individual characters
         else: 
             for j in range(m):
-                part = list(mgl_namen[i][j])
+                part = list(poss_names[i][j])
                 if any(map(lambda v: v in punctuation, part)):
                     todel.append(i)
                     break
                 elif any(map(lambda v: v in numbers, part)):
                     todel.append(i)
                     break
-                # to filter out email addresses containing "signaliduna"
-                elif all(map(lambda v: v in part, list('signaliduna'))):
+                # to filter out email addresses containing "company_name"
+                elif all(map(lambda v: v in part, list('company_name'))):
                     todel.append(i)
                     break
     j = 0
     for i in range(len(todel)):
-        del(mgl_namen[todel[i] - j])
+        del(poss_names[todel[i] - j])
         j = j + 1
-    return mgl_namen
+    return poss_names
 
-# TODO
-# make a smarter selection here, include Levenshtein etc. (probably not enough yet)
-def nameVergleich(schreiben):
+def nameVergleich(document):
     '''
     CURRENTLY ONE OF THE MOST FREQUENT NAMES IS SELECTED (THE FIRST ONE)
     PROBLEMS: DIFFERENT SPELLINGS; NAME OCCURS ONLY ONCE
     
-    Inputs: schreiben (non-tokenized)
+    Inputs: document (non-tokenized)
     
     Outputs: a possible name
     '''
     try:
-        namen_vek = namenFinden(schreiben)
+        names_vec = namenFinden(document)
         counter = []
-        for i in range(len(namen_vek)):
-            counter.append(namen_vek.count(namen_vek[i]))
+        for i in range(len(names_vec)):
+            counter.append(names_vec.count(names_vec[i]))
         max_count = max(counter)
-        erg = myGleich(counter, max_count)
-        if len(namen_vek[erg[0]][0]) > 0:
-            ein_max = namen_vek[erg[0]]
+        res = myGleich(counter, max_count)
+        if len(names_vec[res[0]][0]) > 0:
+            a_max = names_vec[res[0]]
         else:
-            ein_max = namen_vek[erg[1]]
+            a_max = names_vec[res[1]]
     except:
-        ein_max = ['N', 'Ö']
-    return ein_max
+        a_max = ['N', 'Ö']
+    return a_max
 
 ### GeVo ======================================================================
 
-def KFindenSimple(schreiben, k_words):
+def KFindenSimple(document, c_words):
     '''
     searches for words that indicate a cancellation and classifies into
     cancellation or non-cancellation
     
-    Inputs:     schreiben - non-tokenized document
+    Inputs:     document - non-tokenized document
     
-    Outputs:    dok_Gevo - 'K' or 'N', depending on cancellation or not
+    Outputs:    doc_Gevo - 'C' or 'N', depending on cancellation or not
     '''
-    schreiben_lower = delPunct(schreiben).lower()
-    dok = schreiben_lower.split()
-    dok_GeVo = []
-    if any(map(lambda v: v in k_words, dok)):
-         dok_GeVo = 'K'
+    document_lower = delPunct(document).lower()
+    doc = document_lower.split()
+    doc_GeVo = []
+    if any(map(lambda v: v in c_words, doc)):
+         doc_GeVo = 'C'
     else:
-        dok_GeVo = 'N'
-    return(dok_GeVo)
+        doc_GeVo = 'N'
+    return(doc_GeVo)
 
 
-def gevoFinden(schreiben, k_words, nk_words, pos = 'K', neg = 'N'):
+def gevoFinden(document, c_words, nc_words, pos = 'C', neg = 'N'):
     '''
     searches for words that indicate a cancellation and classifies into
     cancellation or non-cancellation
     
-    Inputs:     schreiben - non-tokenized document
+    Inputs:     document - non-tokenized document
     
-    Outputs:    dok_Gevo - 'K' or 'N', depending on cancellation or not
+    Outputs:    doc_Gevo - 'C' or 'N', depending on cancellation or not
     '''
-    schreiben_lower = delPunct(schreiben).lower()
-    dok = schreiben_lower.split()
-    dok_bigram = [' '.join(b) for l in [' '.join(dok)] for b in zip(l.split(' ')[:-1], l.split(' ')[1:])]
-    dok_GeVo = []
+    document_lower = delPunct(document).lower()
+    doc = document_lower.split()
+    doc_bigram = [' '.join(b) for l in [' '.join(dok)] for b in zip(l.split(' ')[:-1], l.split(' ')[1:])]
+    doc_GeVo = []
 
-    if nk_words == []:
-        if any(map(lambda v: v in k_words, dok)):
-            dok_GeVo = pos
-        elif any(map(lambda v: v in k_words, dok_bigram)):
-            dok_GeVo = pos
+    if nc_words == []:
+        if any(map(lambda v: v in c_words, doc)):
+            doc_GeVo = pos
+        elif any(map(lambda v: v in c_words, doc_bigram)):
+            doc_GeVo = pos
         else:
-            dok_GeVo = neg
+            doc_GeVo = neg
     else: 
-        if any(map(lambda v: v in nk_words, dok)):
-            dok_GeVo = neg
-        elif any(map(lambda v: v in nk_words, dok_bigram)):
-            dok_GeVo = neg
-        elif any(map(lambda v: v in k_words, dok)):
-             dok_GeVo = pos
-        elif any(map(lambda v: v in k_words, dok_bigram)):
-            dok_GeVo = pos
+        if any(map(lambda v: v in nc_words, doc)):
+            doc_GeVo = neg
+        elif any(map(lambda v: v in nc_words, doc_bigram)):
+            doc_GeVo = neg
+        elif any(map(lambda v: v in c_words, doc)):
+             doc_GeVo = pos
+        elif any(map(lambda v: v in c_words, doc_bigram)):
+            doc_GeVo = pos
         else:
-            dok_GeVo = neg
+            doc_GeVo = neg
             
-    return(dok_GeVo)
+    return(doc_GeVo)
 
 ### Reason =====================================================================
 
-def grundFinden(schreiben):
+def grundFinden(document):
     '''
     searches for words that describe a reason and assigns
     corresponding categories
     
-    Inputs:     schreiben - non-tokenized document
+    Inputs:     document - non-tokenized document
     
-    Outputs:    dok_Grund - vector with letters representing the reasons
+    Outputs:    doc_reason - vector with letters representing the reasons
     '''
-    schreiben_lower = delPunct(schreiben).lower()
-    dok = schreiben_lower.split()
-    dok_Grund = []
-    b_words = ['arbeitnehmerwechsel', 'neue arbeit', 'abgang']
+    document_lower = delPunct(document).lower()
+    doc = document_lower.split()
+    doc_reason = []
+    j_words = ['arbeitnehmerwechsel', 'neue arbeit', 'abgang']
     f_words = ['finanziell', 'geld', 'insolvenz', 'finanziellen']
     r_words = ['rente', 'rentenbeginn', 'rentenzahlung', 'nicht arbeitsfähig', 
                'nicht mehr arbeitsfähig']
-    t_words = ['todesfall', 'gestorben', 'todes', 'tod', 'verstorben', 
+    d_words = ['todesfall', 'gestorben', 'todes', 'tod', 'verstorben', 
                'verstorbene']
-    if any(map(lambda v: v in b_words, dok)):
-        dok_Grund += 'B'
-    if any(map(lambda v: v in f_words, dok)):
-        dok_Grund += 'F'
-    if any(map(lambda v: v in r_words, dok)):
-        dok_Grund += 'R'
-    if any(map(lambda v: v in t_words, dok)):
-        dok_Grund += 'T'
+    if any(map(lambda v: v in j_words, doc)):
+        doc_reason += 'J'
+    if any(map(lambda v: v in f_words, doc)):
+        doc_reason += 'F'
+    if any(map(lambda v: v in r_words, doc)):
+        doc_reason += 'R'
+    if any(map(lambda v: v in d_words, doc)):
+        doc_reason += 'D'
 
-    return dok_Grund
+    return doc_reason
 
 
-def grundVergleich(schreiben):
+def grundVergleich(document):
     '''
     determines which reason appears most frequently in a document
     and how often each reason occurs
     
-    Inputs:     schreiben
+    Inputs:     document
     
-    Outputs:    Grund - most frequent reason
+    Outputs:    reason - most frequent reason
     
                 if not unique:
-                erg_tab - dictionary with frequencies of each reason
+                res_tab - dictionary with frequencies of each reason
     '''
-    schreiben_lower = delPunct(schreiben).lower()
-    mgl_gruende = grundFinden(schreiben_lower)
+    document_lower = delPunct(document).lower()
+    poss_reasons = grundFinden(document_lower)
     res = defaultdict(int)
-    for i in mgl_gruende:
+    for i in poss_reasons:
         res[i] += 1
-    erg_tab = (dict(res))
-    B_freq = erg_tab.get('B', 0)
-    F_freq = erg_tab.get('F', 0)
-    R_freq = erg_tab.get('R', 0)
-    T_freq = erg_tab.get('T', 0)
-    freq = ['B', 'F', 'R', 'T']
-    freqs = [B_freq, F_freq, R_freq, T_freq]
-    maxGruende = max(freqs)
+    res_tab = (dict(res))
+    J_freq = res_tab.get('J', 0)
+    F_freq = res_tab.get('F', 0)
+    R_freq = res_tab.get('R', 0)
+    D_freq = res_tab.get('D', 0)
+    freq = ['J', 'F', 'R', 'D']
+    freqs = [J_freq, F_freq, R_freq, D_freq]
+    poss_reasons = max(freqs)
     
-    if maxGruende > 0:
-        Grund = freq[myGleich(freqs, maxGruende)[0]]
-        if sum(freqs) == maxGruende:
-            return Grund
+    if poss_reasons > 0:
+        reason = freq[myGleich(freqs, poss_reasons)[0]]
+        if sum(freqs) == poss_reasons:
+            return reason
         else:
-            return Grund, erg_tab
+            return reason, res_tab
     else:
-        return 'S' 
+        return 'O' 
 
 ### Corona ====================================================================
 
-def covidFinden(schreiben):
+def covidFinden(document):
     # checks
     '''
     checks whether words like Corona, covid, etc. occur
     
-    Inputs:     schreiben - non-tokenized document
+    Inputs:     document - non-tokenized document
     
-    Outputs:    erg - vector with positions where COVID-related words occur
+    Outputs:    res - vector with positions where COVID-related words occur
     '''
     covid_token = ['corona', 'covid', 'covid19', 'pandemie', 'coronabedingt',
                    'pandemisch', 'pandemische', 'pandemischen', 'kurzarbeit',
                    'coronakrise', 'lockdown', 'coronaregeln']
-    schreiben_lower = delPunct(schreiben).lower()
-    # TODO 
-    # maybe include startswith somehow?
-    erg = []
+    document_lower = delPunct(document).lower()
+    res = []
     for i in range(len(covid_token)):
-        erg += searchIndizes(schreiben_lower, covid_token[i]) 
-    return erg
+        res += searchIndizes(document_lower, covid_token[i]) 
+    return res
 
 
-def covidVergleich(schreiben):
+def covidVergleich(document):
     
     '''
     returns TRUE if a COVID-related word occurs (or multiple), and FALSE
     otherwise
     
-    Inputs:     schreiben - non-tokenized document
+    Inputs:     document - non-tokenized document
     
     Outputs:    TRUE/FALSE
     '''
-    schreiben_lower = delPunct(schreiben).lower()
-    erg = covidFinden(schreiben_lower)
-    if len(erg) > 0:
+    document_lower = delPunct(document).lower()
+    res = covidFinden(document_lower)
+    if len(res) > 0:
         return True
     else:
         return False
@@ -911,43 +892,30 @@ def covidVergleich(schreiben):
 # =============================================================================
 
 
-def getHauptteil(schreiben):
+def getHauptteil(document):
     '''
     extracts the main body of a document
     THIS NO LONGER DOES THAT BECAUSE IT DOES NOT MAKE SENSE
     ONLY KEPT TO AVOID CHANGING EVERYTHING
     
-    Inputs:     schreiben - non-tokenized document
+    Inputs:     document - non-tokenized document
     
-    Outputs:    erg - document without "introduction" and currently all in
+    Outputs:    res - document without "introduction" and currently all in
                       lowercase and without punctuation
     '''
-    schreiben_pl = delPunct(schreiben)
-    schreiben_lower = schreiben_pl.lower()
-    erg = schreiben_lower
-    # try:
-    #     erg = schreiben_lower[schreiben_lower.index('sehr geehrte'):]
-    # except:
-    #     try:
-    #         erg = schreiben_lower[schreiben_lower.index('guten tag'):]
-    #     except:
-    #         try:
-    #             erg = schreiben_lower[schreiben_lower.index('liebe'):]
-    #         except:
-    #             erg = schreiben_lower
-    return erg
+    document_pl = delPunct(document)
+    document_lower = document_pl.lower()
+    res = document_lower
+    return res
 
 def getHauptteile(dok_list):
     '''
-    applies getHauptteil to dok_list
+    applies getHauptteil to doc_list
     '''
     new_list = []
-    for i in dok_list:
+    for i in doc_list:
         new_list.append(getHauptteil(i))
     return new_list
-
-# TODO
-# possibly remove everything after the greetings
 
 # =============================================================================
 # Write everything into an Excel table
@@ -956,11 +924,11 @@ def getHauptteile(dok_list):
 ### Create table ========================================================
  
 
-def getInfos(schreiben):
+def getInfos(document):
     '''
     returns name, VNR, GeVo and COVID indicator for a document
     
-    Inputs:     schreiben - non-tokenized document
+    Inputs:     document - non-tokenized document
     
     Outputs:    Infos - containing:
                 name
@@ -969,50 +937,50 @@ def getInfos(schreiben):
                 covid
                 text body
     '''
-    name = nameVergleich(schreiben)
-    vnr = vnrVergleich(schreiben)
-    gevo = gevoFinden(schreiben, ['kündigung', 'kündige', 'kündigen'],
+    name = nameVergleich(document)
+    vnr = vnrVergleich(document)
+    gevo = gevoFinden(document, ['kündigung', 'kündige', 'kündigen'],
                       ['beitragsfreistellung', 'beitragspause', 'erhöhung'])
-    covid = covidVergleich(schreiben)
-    textteil = ' '.join(getHauptteil(schreiben).split())
-    Infos = [name, vnr, gevo, covid, textteil]
+    covid = covidVergleich(document)
+    textpart = ' '.join(getHauptteil(document).split())
+    Infos = [name, vnr, gevo, covid, textpart]
     return Infos
 
-def createTable(dok_list):
+def createTable(doc_list):
     '''
     creates a table using getInfos
     
-    Inputs:     dok_list
+    Inputs:     doc_list
     
     Outputs:    table
 
     '''
-    Tabelle = []
-    for i in range(len(dok_list)):
-        Tabelle += getInfos(dok_list[i])
-    return(Tabelle)
+    table = []
+    for i in range(len(doc_list)):
+        table += getInfos(doc_list[i])
+    return(table)
      
 ### write table to Excel ======================================================
 
-def tabelleSchreiben(dok_list, filename):
+def tabelledocument(doc_list, filename):
     '''
     creates an Excel table with the given information
     
-    Inputs:     dok_list - list of documents
+    Inputs:     doc_list - list of documents
     
                 filename - the name under which the Excel file should be saved
                            
     Outputs:    no outputs in Python, Excel table is saved in the folder 
-                Schriftstücke\Output under filename
+                \Output under filename
     '''
-    tab = createTable(dok_list)
-    namen = tab[0::5]
+    tab = createTable(doc_list)
+    names = tab[0::5]
     vnrs = tab[1::5]
     gevos = tab[2::5]
     covids = tab[3::5]
     texts = tab[4::5]
     
-    os.chdir(r'W:\Sonder\lva-93300\Schriftstücke\Output')
+    os.chdir(r'W:\your_folder\Output')
     outWorkbook = xlsxwriter.Workbook(filename)
     outSheet = outWorkbook.add_worksheet()
     outSheet.write('A1', 'First name') 
@@ -1024,11 +992,11 @@ def tabelleSchreiben(dok_list, filename):
 
     for i in range(len(vnrs)):
         try:
-            outSheet.write(i + 1, 0, namen[i][0])
+            outSheet.write(i + 1, 0, names[i][0])
         except:
             outSheet.write(i + 1, 0, '')
         try:
-            outSheet.write(i + 1, 1, namen[i][1])
+            outSheet.write(i + 1, 1, names[i][1])
         except:
             outSheet.write(i + 1, 1, '')
         try:
@@ -1100,17 +1068,17 @@ def getStem(texte):
 
 
 
-def delWortvector(schreiben, wortvector):
+def delWortvector(document, wortvector):
     '''
     removes all words contained in a given vector from a document
     
-    Inputs:     schreiben
+    Inputs:     document
                 wortvector
         
     Outputs:    document without words from wortvector
 
     '''
-    schreib = [token for token in schreiben.split() if token not in wortvector]
+    schreib = [token for token in document.split() if token not in wortvector]
     schreib2 = ' '.join(schreib)
     return(schreib2)
 
@@ -1122,17 +1090,17 @@ stop_words = get_stop_words('de')
 stop_words_stem = getStem(stop_words)    
 
 
-def delNumbers(schreiben):
+def delNumbers(document):
     '''
     removes all tokens that contain numbers
     
-    Inputs:     schreiben - non-tokenized document
+    Inputs:     document - non-tokenized document
     
     Outputs:    erg - non-tokenized document without numbers (as string)
 
     '''
     numbers = list('0123456789')  
-    main = getHauptteil(schreiben)
+    main = getHauptteil(document)
     n = len(main.split())
     ausgabe = []
     for i in range(n):
@@ -1438,9 +1406,9 @@ def getHäufigeWörtermitSW(txt, nummerw, nummerbi):
     return(haufig, haufig_bi)
     
     
-def getAnzahlen(vglwortvek, Klasse1, Klasse2):
+def getAnzahlen(compwortvek, Klasse1, Klasse2):
     inKl1 = []
-    for i in vglwortvek:
+    for i in compwortvek:
         count = 0
         for j in range(len(Klasse1)):
             if i in Klasse1[j].split():
@@ -1450,7 +1418,7 @@ def getAnzahlen(vglwortvek, Klasse1, Klasse2):
         inKl1.append(count)
     
     inKl2 = []
-    for i in vglwortvek:
+    for i in compwortvek:
         count = 0
         for j in range(len(Klasse2)):
             if i in Klasse2[j].split():
@@ -1461,16 +1429,16 @@ def getAnzahlen(vglwortvek, Klasse1, Klasse2):
         
     summeKl1 = 0
     for j in range(len(Klasse1)):
-        if any(map(lambda v: v in vglwortvek, Klasse1[j].split())):
+        if any(map(lambda v: v in compwortvek, Klasse1[j].split())):
             summeKl1 += 1
-        elif any(map(lambda v: v in vglwortvek, [' '.join(b) for l in [' '.join(Klasse1[j].split())] for b in zip(l.split(' ')[:-1], l.split(' ')[1:])])):
+        elif any(map(lambda v: v in compwortvek, [' '.join(b) for l in [' '.join(Klasse1[j].split())] for b in zip(l.split(' ')[:-1], l.split(' ')[1:])])):
             summeKl1 += 1
     
     summeKl2 = 0
     for j in range(len(Klasse2)):
-        if any(map(lambda v: v in vglwortvek, Klasse2[j].split())):
+        if any(map(lambda v: v in compwortvek, Klasse2[j].split())):
             summeKl2 += 1
-        elif any(map(lambda v: v in vglwortvek, [' '.join(b) for l in [' '.join(Klasse2[j].split())] for b in zip(l.split(' ')[:-1], l.split(' ')[1:])])):
+        elif any(map(lambda v: v in compwortvek, [' '.join(b) for l in [' '.join(Klasse2[j].split())] for b in zip(l.split(' ')[:-1], l.split(' ')[1:])])):
             summeKl2 += 1
             
     return(inKl1, summeKl1, inKl2, summeKl2)
