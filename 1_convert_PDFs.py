@@ -16,21 +16,21 @@ from functions import *
 # =============================================================================
 
 # Cancellation
-vielUmspeichern(r'W:\your_folder\sorted data\Cancellation',
+lotSaveNew(r'W:\your_folder\sorted data\Cancellation',
                 r'W:\your_folder\data - unprotected\Cancellation')             
 
 # Contribution break
-vielUmspeichern(r'W:\your_folder\sorted data\Contribution_break',
+lotSaveNew(r'W:\your_folder\sorted data\Contribution_break',
                 r'W:\your_folder\data - unprotected\Contribution_break')
 
 # Premium waiver
-vielUmspeichern(r'W:\your_folder\sorted data\Premium_waiver',
+lotSaveNew(r'W:\your_folder\sorted data\Premium_waiver',
                 r'W:\your_folder\data - unprotected\Premium_waiver')
 
 # Increase
-vielUmspeichern(r'W:\your_folder\sorted data\Increase',
+lotSaveNew(r'W:\your_folder\sorted data\Increase',
                 r'W:\your_folder\data - unprotected\Increase')
 
 # Policyholder change
-vielUmspeichern(r'W:\your_folder\sorted data\Policyholder_change',
+lotSaveNew(r'W:\your_folder\sorted data\Policyholder_change',
                 r'W:\your_folder\data - unprotected\Policyholder_change')
