@@ -19,225 +19,224 @@ from sklearn.linear_model import Lasso, LassoCV # Lasso
 from sklearn.metrics import mean_squared_error # lasso
 # https://laurenliz22.github.io/nlp_random_forest_and_neural_network_classifiers 
 
-os.chdir(r'W:\Sonder\lva-93300\Masterarbeiten\Marie Punsmann\Python')
-from Funktionen import *
+os.chdir(r'W:\your_folder\Python')
+from functions import *
 
-# # =============================================================================
-# # Daten einlesen 
-# # =============================================================================
+# =============================================================================
+# Daten einlesen 
+# =============================================================================
 
-# os.chdir(r'W:\Sonder\lva-93300\Schriftstücke\Output')
-# dill.load_session('4B_04_28.pkl')
+os.chdir(r'W:\your_folder\Output')
+dill.load_session('4B_04_28.pkl')
 
-# stop_words = get_stop_words('de')
+stop_words = get_stop_words('de')
 
-# # # Da die Gründe einzeln betrachtet werden, könnte theoretisch jeder Grund
-# # einzeln abgehandelt werden, da aber die Wörter aus der Wortsuche gebraucht
-# # werden, kommen erst alle vier Wortsuchen und dann die Klassifikationsmodelle,
-# # getrennt nach Gründen.
+# Da die Gründe einzeln betrachtet werden, könnte theoretisch jeder Grund
+# einzeln abgehandelt werden, da aber die Wörter aus der Wortsuche gebraucht
+# werden, kommen erst alle vier Wortsuchen und dann die Klassifikationsmodelle,
+# getrennt nach Gründen.
 
-# # =============================================================================
-# # =============================================================================
-# # # Wortsuchen 
-# # =============================================================================
-# # =============================================================================
+# =============================================================================
+# =============================================================================
+# # Wortsuchen 
+# =============================================================================
+# =============================================================================
 
-# # =============================================================================
-# # finanziell
-# # =============================================================================
+# =============================================================================
+# finanziell
+# =============================================================================
 
-# ### Neue Daten erstellen, für jeden Grund ein Datensatz, in dem z.B. nur die
-# ### Renten Renten sind, der Rest alles 'K'
+### Neue Daten erstellen, für jeden Grund ein Datensatz, in dem z.B. nur die
+### Renten Renten sind, der Rest alles 'K'
 
-# y_train_finanziell = list(pd.DataFrame(y_train).replace(['B', 'R', 'T', 'S'], 'K')[0])
-# y_test_finanziell = list(pd.DataFrame(y_test).replace(['B', 'R', 'T', 'S'], 'K')[0])
+y_train_finanziell = list(pd.DataFrame(y_train).replace(['B', 'R', 'T', 'S'], 'K')[0])
+y_test_finanziell = list(pd.DataFrame(y_test).replace(['B', 'R', 'T', 'S'], 'K')[0])
 
-# y_test_10_F = []
-# for i in range(len(y_test)):
-#     if y_test[i] == 'F':
-#         y_test_10_F.append(1)
-#     else:
-#         y_test_10_F.append(0)
+y_test_10_F = []
+for i in range(len(y_test)):
+    if y_test[i] == 'F':
+        y_test_10_F.append(1)
+    else:
+        y_test_10_F.append(0)
         
-# y_train_10_F = []
-# for i in range(len(y_train)):
-#     if y_train[i] == 'F':
-#         y_train_10_F.append(1)
-#     else:
-#         y_train_10_F.append(0)
+y_train_10_F = []
+for i in range(len(y_train)):
+    if y_train[i] == 'F':
+        y_train_10_F.append(1)
+    else:
+        y_train_10_F.append(0)
                 
         
-# ### Wortsuche
-    
+### Wortsuche    
 
-# # da hier aufgrund der geringen Anzahl an Kündigungen pro Grund nur sehr wenige 
-# # Wörter vorkommen, ist es schwierig eine Wordcloud ohne Namen zu machen
+### da hier aufgrund der geringen Anzahl an Kündigungen pro Grund nur sehr wenige 
+### Wörter vorkommen, ist es schwierig eine Wordcloud ohne Namen zu machen
 
-# # stattdessen werden die häufig vorkommenden Wörter und Bigramme so angeschaut
-# # und die, die mit einer Kündigung aus finanziellem Grund zu tun haben, 
-# # werden ausgewählt
+### stattdessen werden die häufig vorkommenden Wörter und Bigramme so angeschaut
+### und die, die mit einer Kündigung aus finanziellem Grund zu tun haben, 
+### werden ausgewählt
 
-# [haufig_F, haufig_F_bi] = getHäufigeWörtermitSW(X_train_F, 200, 100)
+[haufig_F, haufig_F_bi] = getFreqWordsWithSW(X_train_F, 200, 100)
 
-# f_words = np.sort(['finanziell', 'insolvenzverwalt', 'engpass', 'wirtschaft',
-#                     'finanziell engpass', 'gezwung', 'insolvenzverfahr', 
-#                     'immobiliendarlehn', 'einbuss', 'eigentum', 'wenig lohn'])
+f_words = np.sort(['finanziell', 'insolvenzverwalt', 'engpass', 'wirtschaft',
+                    'finanziell engpass', 'gezwung', 'insolvenzverfahr', 
+                    'immobiliendarlehn', 'einbuss', 'eigentum', 'wenig lohn'])
 
 
-# poss_f_words = getBestCombinations(f_words, X_train, y_train_finanziell, 'F')
+poss_f_words = getBestCombinations(f_words, X_train, y_train_finanziell, 'F')
 
-# # wähle die wenigstens Wörter, wenn mehrere: zufällig das erste
-# anz_wort = []
-# for i in range(len(poss_f_words)):
-#     anz_wort.append(len(poss_f_words[i]))
-# f_words_updated = poss_f_words[myGleich(anz_wort, min(anz_wort))[0]]
-# # f_words_updated = ['eigentum', 'finanziell', 'immobiliendarlehn',
-# #                    'insolvenzverfahr', 'wenig lohn', 'wirtschaft']
-# # ['eigentum',
-# #  'finanziell',
-# #  'immobiliendarlehn',
-# #  'insolvenzverfahr',
-# #  'wenig lohn',
-# #  'wirtschaft']
+# wähle die wenigstens Wörter, wenn mehrere: zufällig das erste
+anz_wort = []
+for i in range(len(poss_f_words)):
+    anz_wort.append(len(poss_f_words[i]))
+f_words_updated = poss_f_words[myEqual(anz_wort, min(anz_wort))[0]]
+# f_words_updated = ['eigentum', 'finanziell', 'immobiliendarlehn',
+#                    'insolvenzverfahr', 'wenig lohn', 'wirtschaft']
+# ['eigentum',
+#  'finanziell',
+#  'immobiliendarlehn',
+#  'insolvenzverfahr',
+#  'wenig lohn',
+#  'wirtschaft']
 
-# [cm_F, sensi_F, spezi_F, richtigkl_F, ypred_F] = getWerte(f_words_updated, [], 
-#                                                            X_train, y_train_finanziell,
-#                                                            'F', 'K')
+[cm_F, sensi_F, spezi_F, richtigkl_F, ypred_F] = getValues(f_words_updated, [], 
+                                                           X_train, y_train_finanziell,
+                                                           'F', 'K')
 
-# # array([[ 13,   5],
-# #        [ 10, 851]], dtype=int64)
+# array([[ 13,   5],
+#        [ 10, 851]], dtype=int64)
 
 # sensi_F # 0.7222222222222222
 # spezi_F # 0.9883855981416957
 # richtigkl_F # 0.9829351535836177
 
-# [cm_F_test, sensi_F_test, spezi_F_test, richtigkl_F_test, ypred_F_test] = getWerte(f_words_updated, [], 
-#                                                            X_test, y_test_finanziell,
-#                                                            'F', 'K')
+[cm_F_test, sensi_F_test, spezi_F_test, richtigkl_F_test, ypred_F_test] = getValues(f_words_updated, [], 
+                                                           X_test, y_test_finanziell,
+                                                           'F', 'K')
 
 
-# # array([[  2,   6],
-# #        [  3, 367]], dtype=int64)
+# array([[  2,   6],
+#        [  3, 367]], dtype=int64)
 
 # sensi_F_test # 0.25
 # spezi_F_test # 0.9918918918918919
 # richtigkl_F_test # 0.9761904761904762
 
-# # =============================================================================
-# # Berufswechsel
-# # =============================================================================
+# =============================================================================
+# Berufswechsel
+# =============================================================================
 
-# ### Neue Daten erstellen, für jeden Grund ein Datensatz, in dem z.B. nur die
-# ### Renten Renten sind, der Rest alles 'K'
+### Neue Daten erstellen, für jeden Grund ein Datensatz, in dem z.B. nur die
+### Renten Renten sind, der Rest alles 'K'
 
-# y_train_Berufswechsel = list(pd.DataFrame(y_train).replace(['F', 'R', 'T', 'S'], 'K')[0])
-# y_test_Berufswechsel = list(pd.DataFrame(y_test).replace(['F', 'R', 'T', 'S'], 'K')[0])
+y_train_Berufswechsel = list(pd.DataFrame(y_train).replace(['F', 'R', 'T', 'S'], 'K')[0])
+y_test_Berufswechsel = list(pd.DataFrame(y_test).replace(['F', 'R', 'T', 'S'], 'K')[0])
 
-# y_test_10_B = []
-# for i in range(len(y_test)):
-#     if y_test[i] == 'B':
-#         y_test_10_B.append(1)
-#     else:
-#         y_test_10_B.append(0)
+y_test_10_B = []
+for i in range(len(y_test)):
+    if y_test[i] == 'B':
+        y_test_10_B.append(1)
+    else:
+        y_test_10_B.append(0)
         
-# y_train_10_B = []
-# for i in range(len(y_train)):
-#     if y_train[i] == 'B':
-#         y_train_10_B.append(1)
-#     else:
-#         y_train_10_B.append(0)
+y_train_10_B = []
+for i in range(len(y_train)):
+    if y_train[i] == 'B':
+        y_train_10_B.append(1)
+    else:
+        y_train_10_B.append(0)
         
-# ### Wortsuche
-# [haufig_B, haufig_B_bi] = getHäufigeWörtermitSW(X_train_B, 200, 100)
+### Wortsuche
+[haufig_B, haufig_B_bi] = getFreqWordsWithSW(X_train_B, 200, 100)
 
-# b_words = np.sort(getStem(['beschaftigt', 'betrieb', 'alt arbeitgeb', 'arbeitet',
-#                            'mitarbeiterin', 'mitarbeit', 'aufheb vertrag']))
+b_words = np.sort(getStem(['beschaftigt', 'betrieb', 'alt arbeitgeb', 'arbeitet',
+                           'mitarbeiterin', 'mitarbeit', 'aufheb vertrag']))
 
-# poss_b_words = getBestCombinations(b_words, X_train, y_train_Berufswechsel, 'B')
+poss_b_words = getBestCombinations(b_words, X_train, y_train_Berufswechsel, 'B')
    
-# # wähle die wenigstens Wörter, wenn mehrere: zufällig das erste
-# anz_wort = []
-# for i in range(len(poss_b_words)):
-#     anz_wort.append(len(poss_b_words[i]))
-# b_words_updated = poss_b_words[myGleich(anz_wort, min(anz_wort))[0]]
-# b_words_updated # ['alt arbeitgeb', 'aufheb vertrag', 'beschaftigt', 'betrieb', 'mitarbeiterin']
+# wähle die wenigstens Wörter, wenn mehrere: zufällig das erste
+anz_wort = []
+for i in range(len(poss_b_words)):
+    anz_wort.append(len(poss_b_words[i]))
+b_words_updated = poss_b_words[myEqual(anz_wort, min(anz_wort))[0]]
+b_words_updated # ['alt arbeitgeb', 'aufheb vertrag', 'beschaftigt', 'betrieb', 'mitarbeiterin']
 
-# [cm_B, sensi_B, spezi_B, richtigkl_B, ypred_B] = getWerte(b_words_updated, [], 
-#                                                            X_train, y_train_Berufswechsel,
-#                                                            'B', 'K')
+[cm_B, sensi_B, spezi_B, richtigkl_B, ypred_B] = getValues(b_words_updated, [], 
+                                                           X_train, y_train_Berufswechsel,
+                                                           'B', 'K')
 
-# cm_B
-# # array([[  9,   7],
-# #        [ 48, 815]], dtype=int64)
+cm_B
+# array([[  9,   7],
+#        [ 48, 815]], dtype=int64)
 # sensi_B # 0.5625
 # spezi_B # 0.944380069524913
 # richtigkl_B # 0.9374288964732651
 
-# [cm_B_test, sensi_B_test, spezi_B_test, richtigkl_B_test, ypred_B_test] = getWerte(b_words_updated, [], 
-#                                                            X_test, y_test_Berufswechsel,
-#                                                            'B', 'K')
+[cm_B_test, sensi_B_test, spezi_B_test, richtigkl_B_test, ypred_B_test] = getValues(b_words_updated, [], 
+                                                           X_test, y_test_Berufswechsel,
+                                                           'B', 'K')
 
-# cm_B_test
-# # array([[  1,   6],
-# #        [ 16, 355]], dtype=int64)
+cm_B_test
+# array([[  1,   6],
+#        [ 16, 355]], dtype=int64)
 # sensi_B_test # 0.14285714285714285
 # spezi_B_test # 0.9568733153638814
 # richtigkl_B_test # 0.9417989417989417
 
 
-# # =============================================================================
-# # Rente
-# # =============================================================================
+# =============================================================================
+# Rente
+# =============================================================================
 
 
-# ### Neue Daten erstellen, für jeden Grund ein Datensatz, in dem z.B. nur die
-# ### Renten Renten sind, der Rest alles 'K'
+### Neue Daten erstellen, für jeden Grund ein Datensatz, in dem z.B. nur die
+### Renten Renten sind, der Rest alles 'K'
 
-# y_train_Rente = list(pd.DataFrame(y_train).replace(['B', 'F', 'T', 'S'], 'K')[0])
-# y_test_Rente = list(pd.DataFrame(y_test).replace(['B', 'F', 'T', 'S'], 'K')[0])
+y_train_Rente = list(pd.DataFrame(y_train).replace(['B', 'F', 'T', 'S'], 'K')[0])
+y_test_Rente = list(pd.DataFrame(y_test).replace(['B', 'F', 'T', 'S'], 'K')[0])
 
 
-# y_test_10_R = []
-# for i in range(len(y_test)):
-#     if y_test[i] == 'R':
-#         y_test_10_R.append(1)
-#     else:
-#         y_test_10_R.append(0)
+y_test_10_R = []
+for i in range(len(y_test)):
+    if y_test[i] == 'R':
+        y_test_10_R.append(1)
+    else:
+        y_test_10_R.append(0)
         
-# y_train_10_R = []
-# for i in range(len(y_train)):
-#     if y_train[i] == 'R':
-#         y_train_10_R.append(1)
-#     else:
-#         y_train_10_R.append(0)
+y_train_10_R = []
+for i in range(len(y_train)):
+    if y_train[i] == 'R':
+        y_train_10_R.append(1)
+    else:
+        y_train_10_R.append(0)
         
-# ### Wortsuche
-# [haufig_R, haufig_R_bi] = getHäufigeWörtermitSW(X_train_R, 100, 50)
+### Wortsuche
+[haufig_R, haufig_R_bi] = getFreqWordsWithSW(X_train_R, 100, 50)
 
 
-# r_words = np.sort(getStem(['rente', 'ruhestand', 'rentenbeginn', 'altersrente',
-#                    'regelaltersrent', 'altersversorg', 'rentenalt', 'ruhestand',
-#                    'mehr arbeitsfah']))
+r_words = np.sort(getStem(['rente', 'ruhestand', 'rentenbeginn', 'altersrente',
+                   'regelaltersrent', 'altersversorg', 'rentenalt', 'ruhestand',
+                   'mehr arbeitsfah']))
 
-# poss_r_words = getBestCombinations(r_words, X_train, y_train_Rente, 'K', 'R')
+poss_r_words = getBestCombinations(r_words, X_train, y_train_Rente, 'K', 'R')
    
-# # wähle die wenigstens Wörter, wenn mehrere: zufällig das erste
-# anz_wort = []
-# for i in range(len(poss_r_words)):
-#     anz_wort.append(len(poss_r_words[i]))
-# r_words_updated = poss_r_words[myGleich(anz_wort, min(anz_wort))[0]]
-# r_words_updated # ['altersrent',
-#  # 'mehr arbeitsfah',
-#  # 'regelaltersrent',
-#  # 'rent',
-#  # 'rentenbeginn',
-#  # 'ruhestand']
+# wähle die wenigstens Wörter, wenn mehrere: zufällig das erste
+anz_wort = []
+for i in range(len(poss_r_words)):
+    anz_wort.append(len(poss_r_words[i]))
+r_words_updated = poss_r_words[myEqual(anz_wort, min(anz_wort))[0]]
+r_words_updated # ['altersrent',
+ # 'mehr arbeitsfah',
+ # 'regelaltersrent',
+ # 'rent',
+ # 'rentenbeginn',
+ # 'ruhestand']
 
-# [cm_R, sensi_R, spezi_R, richtigkl_R, ypred_R] = getWerte(r_words_updated, [], 
-#                                                            X_train, y_train_10_R,
-#                                                           1, 0)
+[cm_R, sensi_R, spezi_R, richtigkl_R, ypred_R] = getValues(r_words_updated, [], 
+                                                           X_train, y_train_10_R,
+                                                          1, 0)
 
-# #[cm_R, sensi_R, spezi_R, richtigkl_R] = getWerteKlassi(y_train_10_R, ypred_R)
+#[cm_R, sensi_R, spezi_R, richtigkl_R] = getValuesClass(y_train_10_R, ypred_R)
 
 # cm_R
 # # array([[ 11,   2],
@@ -247,11 +246,11 @@ from Funktionen import *
 # richtigkl_R # 0.8782707622298066
 
 
-# [cm_R_test, sensi_R_test, spezi_R_test, richtigkl_R_test, ypred_R_test] = getWerte(r_words_updated, [], 
-#                                                            X_test, y_test_10_R,
-#                                                            1, 0)
+[cm_R_test, sensi_R_test, spezi_R_test, richtigkl_R_test, ypred_R_test] = getValues(r_words_updated, [], 
+                                                           X_test, y_test_10_R,
+                                                           1, 0)
 
-# # [cm_R_test, sensi_R_test, spezi_R_test, richtigkl_R_test] = getWerteKlassi(y_test_10_R, ypred_R_test)
+# [cm_R_test, sensi_R_test, spezi_R_test, richtigkl_R_test] = getValuesClass(y_test_10_R, ypred_R_test)
 
 # cm_R_test
 # # array([[  2,   3],
@@ -260,55 +259,55 @@ from Funktionen import *
 # spezi_R_test # 0.8579088471849866
 # richtigkl_R_test # 0.8518518518518519
 
-# # =============================================================================
-# # Todesfall
-# # =============================================================================
+# =============================================================================
+# Todesfall
+# =============================================================================
 
 
-# ### Neue Daten erstellen, für jeden Grund ein Datensatz, in dem z.B. nur die
-# ### Renten Renten sind, der Rest alles 'K'
+### Neue Daten erstellen, für jeden Grund ein Datensatz, in dem z.B. nur die
+### Renten Renten sind, der Rest alles 'K'
 
-# y_train_Todesfall = list(pd.DataFrame(y_train).replace(['F', 'B', 'R', 'S'], 'K')[0])
-# y_test_Todesfall = list(pd.DataFrame(y_test).replace(['F', 'B', 'R', 'S'], 'K')[0])
+y_train_Todesfall = list(pd.DataFrame(y_train).replace(['F', 'B', 'R', 'S'], 'K')[0])
+y_test_Todesfall = list(pd.DataFrame(y_test).replace(['F', 'B', 'R', 'S'], 'K')[0])
 
-# y_test_10_T = []
-# for i in range(len(y_test)):
-#     if y_test[i] == 'T':
-#         y_test_10_T.append(1)
-#     else:
-#         y_test_10_T.append(0)
+y_test_10_T = []
+for i in range(len(y_test)):
+    if y_test[i] == 'T':
+        y_test_10_T.append(1)
+    else:
+        y_test_10_T.append(0)
         
-# y_train_10_T = []
-# for i in range(len(y_train)):
-#     if y_train[i] == 'T':
-#         y_train_10_T.append(1)
-#     else:
-#         y_train_10_T.append(0)
+y_train_10_T = []
+for i in range(len(y_train)):
+    if y_train[i] == 'T':
+        y_train_10_T.append(1)
+    else:
+        y_train_10_T.append(0)
 
-# ### Wortsuche
-# [haufig_T, haufig_T_bi] = getHäufigeWörtermitSW(X_train_T, 100, 50)
+### Wortsuche
+[haufig_T, haufig_T_bi] = getFreqWordsWithSW(X_train_T, 100, 50)
 
 
-# t_words = np.sort(getStem(['todesfall', 'gestorben', 'verstorben', 
-#                            'sterbeurkunde', 'sterbegeld', 'todesfallversicher']))
+t_words = np.sort(getStem(['todesfall', 'gestorben', 'verstorben', 
+                           'sterbeurkunde', 'sterbegeld', 'todesfallversicher']))
 
-# poss_t_words = getBestCombinations(t_words, X_train, y_train_Todesfall, 'K', 'T')
+poss_t_words = getBestCombinations(t_words, X_train, y_train_Todesfall, 'K', 'T')
    
-# # wähle die wenigstens Wörter, wenn mehrere: zufällig das erste
-# anz_wort = []
-# for i in range(len(poss_t_words)):
-#     anz_wort.append(len(poss_t_words[i]))
-# t_words_updated = poss_t_words[myGleich(anz_wort, min(anz_wort))[0]]
-# t_words_updated # ['gestorb', 'verstorb']
+# wähle die wenigstens Wörter, wenn mehrere: zufällig das erste
+anz_wort = []
+for i in range(len(poss_t_words)):
+    anz_wort.append(len(poss_t_words[i]))
+t_words_updated = poss_t_words[myEqual(anz_wort, min(anz_wort))[0]]
+t_words_updated # ['gestorb', 'verstorb']
 
-# [cm_T, sensi_T, spezi_T, richtigkl_T, ypred_T] = getWerte(k_words = t_words_updated, 
-#                                                           nk_words = [], 
-#                                                           Xtr = X_train, 
-#                                                           ytr = y_train_10_T,
-#                                                           positiv = 1, 
-#                                                           negativ = 0)
+[cm_T, sensi_T, spezi_T, richtigkl_T, ypred_T] = getValues(k_words = t_words_updated, 
+                                                          nk_words = [], 
+                                                          Xtr = X_train, 
+                                                          ytr = y_train_10_T,
+                                                          positiv = 1, 
+                                                          negativ = 0)
 
-# # [cm_T, sensi_T, spezi_T, richtigkl_T] = getWerteKlassi(y_train_10_T, ypred_T)
+# [cm_T, sensi_T, spezi_T, richtigkl_T] = getValuesClass(y_train_10_T, ypred_T)
 
 # cm_T
 # # array([[ 10,   1],
@@ -317,11 +316,11 @@ from Funktionen import *
 # spezi_T # 1.0
 # richtigkl_T # 0.9988623435722411
 
-# [cm_T_test, sensi_T_test, spezi_T_test, richtigkl_T_test, ypred_T_test] = getWerte(t_words_updated, [], 
-#                                                            X_test, y_test_10_T,
-#                                                            1, 0)
+[cm_T_test, sensi_T_test, spezi_T_test, richtigkl_T_test, ypred_T_test] = getValues(t_words_updated, [], 
+                                                           X_test, y_test_10_T,
+                                                           1, 0)
 
-# #[cm_T_test, sensi_T_test, spezi_T_test, richtigkl_T_test] = getWerteKlassi(y_test_10_T, ypred_T_test)
+#[cm_T_test, sensi_T_test, spezi_T_test, richtigkl_T_test] = getValuesClass(y_test_10_T, ypred_T_test)
 
 # cm_T_test
 # # array([[  3,   2],
@@ -330,8 +329,8 @@ from Funktionen import *
 # spezi_T_test # 0.9973190348525469
 # richtigkl_T_test # 0.9920634920634921
 
-os.chdir(r'W:\Sonder\lva-93300\Schriftstücke\Output')
-# dill.dump_session('ws_5B_4_28.pkl')
+os.chdir(r'W:\your_folder\Output')
+dill.dump_session('ws_5B_4_28.pkl')
 dill.load_session('ws_5B_4_28.pkl')
 # =============================================================================
 # =============================================================================
@@ -1053,7 +1052,7 @@ ts_SVM_T_kl
 
 ### Wortsuche =================================================================
 
-wortsuche_erg = getErgebnisse(ypred_F, ypred_B, ypred_R, ypred_T, X_train, y_train)
+wortsuche_erg = getResults(ypred_F, ypred_B, ypred_R, ypred_T, X_train, y_train)
 #         F klass  B klass  R klass  T klass  K klass
 # F wahr       13        3        1        0        4
 # B wahr        0        9        0        0        7
@@ -1062,7 +1061,7 @@ wortsuche_erg = getErgebnisse(ypred_F, ypred_B, ypred_R, ypred_T, X_train, y_tra
 # K wahr       10       40      104        0      675
 
 
-wortsuche_erg_test = getErgebnisse(ypred_F_test, ypred_B_test, ypred_R_test,
+wortsuche_erg_test = getResults(ypred_F_test, ypred_B_test, ypred_R_test,
                                     ypred_T_test, X_test, y_test)
 #         F klass  B klass  R klass  T klass  K klass
 # F wahr        2        0        2        0        5
@@ -1077,7 +1076,7 @@ wortsuche_erg_test = getErgebnisse(ypred_F_test, ypred_B_test, ypred_R_test,
 # groß
 
 
-RF_erg_gr = getErgebnisse(y_pred_train_RF_F, y_pred_train_RF_B,
+RF_erg_gr = getResults(y_pred_train_RF_F, y_pred_train_RF_B,
                           y_pred_train_RF_R, y_pred_train_RF_T,
                           dtm_train, y_train_all)
 #         F klass  B klass  R klass  T klass  K klass
@@ -1090,7 +1089,7 @@ RF_erg_gr = getErgebnisse(y_pred_train_RF_F, y_pred_train_RF_B,
 # stimmt: alles wird als richtig klassifiziert
 
 # klein
-RF_erg_kl = getErgebnisse(y_pred_train_RF_F_kl, y_pred_train_RF_B_kl,
+RF_erg_kl = getResults(y_pred_train_RF_F_kl, y_pred_train_RF_B_kl,
                           y_pred_train_RF_R_kl, y_pred_train_RF_T_kl,
                           dtm_train_klein, y_train_klein)
 
@@ -1104,7 +1103,7 @@ RF_erg_kl = getErgebnisse(y_pred_train_RF_F_kl, y_pred_train_RF_B_kl,
 
 ## Test
 # groß
-RF_erg_test_gr = getErgebnisse(y_pred_test_RF_F, y_pred_test_RF_B,
+RF_erg_test_gr = getResults(y_pred_test_RF_F, y_pred_test_RF_B,
                           y_pred_test_RF_R, y_pred_test_RF_T,
                           dtm_test, y_test_all)
 #         F klass  B klass  R klass  T klass  K klass
@@ -1117,7 +1116,7 @@ RF_erg_test_gr = getErgebnisse(y_pred_test_RF_F, y_pred_test_RF_B,
 # stimmt: für jeden GeVo wird alles als 'K' klassifiziert
 
 # klein
-RF_erg_test_kl = getErgebnisse(y_pred_test_RF_F_kl, y_pred_test_RF_B_kl,
+RF_erg_test_kl = getResults(y_pred_test_RF_F_kl, y_pred_test_RF_B_kl,
                           y_pred_test_RF_R_kl, y_pred_test_RF_T_kl,
                            dtm_test_klein, y_test_klein)
 #         F klass  B klass  R klass  T klass  K klass
@@ -1133,7 +1132,7 @@ RF_erg_test_kl = getErgebnisse(y_pred_test_RF_F_kl, y_pred_test_RF_B_kl,
 
 ## Train
 # groß
-SVM_erg_gr = getErgebnisse(y_pred_train_SVM_F, y_pred_train_SVM_B,
+SVM_erg_gr = getResults(y_pred_train_SVM_F, y_pred_train_SVM_B,
                           y_pred_train_SVM_R, y_pred_train_SVM_T,
                           dtm_train, y_train_all)
 #         F klass  B klass  R klass  T klass  K klass
@@ -1146,7 +1145,7 @@ SVM_erg_gr = getErgebnisse(y_pred_train_SVM_F, y_pred_train_SVM_B,
 # stimmt: alles wird als richtig klassifiziert
 
 # klein
-SVM_erg_kl = getErgebnisse(y_pred_train_SVM_F_kl, y_pred_train_SVM_B_kl, 
+SVM_erg_kl = getResults(y_pred_train_SVM_F_kl, y_pred_train_SVM_B_kl, 
                            y_pred_train_SVM_R_kl, y_pred_train_SVM_T_kl,
                            dtm_train_klein, y_train_klein)
 #         F klass  B klass  R klass  T klass  K klass
@@ -1160,7 +1159,7 @@ SVM_erg_kl = getErgebnisse(y_pred_train_SVM_F_kl, y_pred_train_SVM_B_kl,
 
 ## Test
 # groß
-SVM_erg_test_gr = getErgebnisse(y_pred_test_SVM_F, y_pred_test_SVM_B,
+SVM_erg_test_gr = getResults(y_pred_test_SVM_F, y_pred_test_SVM_B,
                           y_pred_test_SVM_R, y_pred_test_SVM_T,
                           dtm_test, y_test_all)
 #         F klass  B klass  R klass  T klass  K klass
@@ -1173,7 +1172,7 @@ SVM_erg_test_gr = getErgebnisse(y_pred_test_SVM_F, y_pred_test_SVM_B,
 # stimmt
 
 # klein
-SVM_erg_test_kl = getErgebnisse(y_pred_test_SVM_F_kl, y_pred_test_SVM_B_kl,
+SVM_erg_test_kl = getResults(y_pred_test_SVM_F_kl, y_pred_test_SVM_B_kl,
                           y_pred_test_SVM_R_kl, y_pred_test_SVM_T_kl,
                           dtm_test_klein, y_test_klein)
 #         F klass  B klass  R klass  T klass  K klass
