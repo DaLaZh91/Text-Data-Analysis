@@ -1046,45 +1046,38 @@ def setColRowNames(dataframe, colnames, rownames):
 # Stemming etc.
 # =============================================================================
 
-def getStem(texte):
+def getStem(texts):
     '''
     stems a list of texts
     
-    Inputs:     texte - basically dok_list?
+    Inputs:     texts - basically doc_list
     
     Outputs:    txt_stem - list of stemmed texts
 
     '''
     stemmer = snowballstemmer.stemmer('german')
     txt_stem = []
-    for i in range(len(texte)):
+    for i in range(len(texts)):
         try:
-            stem_teil = stemmer.stemWords(texte[i].split())
+            stem_teil = stemmer.stemWords(texts[i].split())
             txt_stem.append(' '.join(stem_teil))
         except:
             txt_stem.append('nan')
     return(txt_stem)
 
-
-
-
-def delWortvector(document, wortvector):
+def delWortvector(document, wordvector):
     '''
     removes all words contained in a given vector from a document
     
     Inputs:     document
-                wortvector
+                wordvector
         
-    Outputs:    document without words from wortvector
+    Outputs:    document without words from wordvector
 
     '''
-    schreib = [token for token in document.split() if token not in wortvector]
-    schreib2 = ' '.join(schreib)
-    return(schreib2)
-
-
-
-
+    doc = [token for token in document.split() if token not in wordvector]
+    doc2 = ' '.join(doc)
+    return(doc2)
 
 stop_words = get_stop_words('de')
 stop_words_stem = getStem(stop_words)    
@@ -1096,20 +1089,18 @@ def delNumbers(document):
     
     Inputs:     document - non-tokenized document
     
-    Outputs:    erg - non-tokenized document without numbers (as string)
+    Outputs:    res - non-tokenized document without numbers (as string)
 
     '''
     numbers = list('0123456789')  
     main = getHauptteil(document)
     n = len(main.split())
-    ausgabe = []
+    output = []
     for i in range(n):
         if not any(map(lambda v: v in numbers, main.split()[i])):
-            ausgabe.append(main.split()[i])
-    erg = ' '.join(ausgabe)
-    return(erg)
-
-
+            output.append(main.split()[i])
+    res = ' '.join(output)
+    return(res)
 
 ### compute DTM matrices
 
@@ -1125,11 +1116,11 @@ def getDTM(vect, txt, cols = True):
 
     '''
     vects = vect.fit_transform(txt)
-    anzahl = len(txt) 
+    amount = len(txt) 
     td = pd.DataFrame(vects.todense())
     td.columns = vect.get_feature_names()
     tdM = td.T
-    tdM.columns = ['Doc '+ str(i) for i in range(1, anzahl + 1)]
+    tdM.columns = ['Doc '+ str(i) for i in range(1, amount + 1)]
     # tdM['total_count'] = tdM.sum(axis=1)
     # tdM.drop(columns=['total_count'])
     if cols != True:
@@ -1146,55 +1137,54 @@ def getTokenCount(vect, X_train, name):
     count_DF = pd.DataFrame(data = [token, count], index = ['token', name]).T
     return count_DF
 
-def delSelteneWoerter(vect, X_train_K, X_train_NK, p, K_len_train, NK_len_train):
+def delSelteneWoerter(vect, X_train_C, X_train_NC, p, C_len_train, NC_len_train):
     
-    count_DF_K = getTokenCount(vect, X_train_K, 'count K')
-    count_DF_NK = getTokenCount(vect, X_train_NK, 'count NK')
+    count_DF_C = getTokenCount(vect, X_train_C, 'count C')
+    count_DF_NC = getTokenCount(vect, X_train_NC, 'count NC')
 
-    gem_df = pd.merge(count_DF_K, count_DF_NK, on = 'token', how = 'outer')
+    gem_df = pd.merge(count_DF_C, count_DF_NC, on = 'token', how = 'outer')
     gem_df = gem_df.fillna(0)
     
-    keep_K = np.where(gem_df['count K'] > (p * K_len_train))
-    keep_NK = np.where(gem_df['count NK'] > (p * NK_len_train))
+    keep_C = np.where(gem_df['count C'] > (p * C_len_train))
+    keep_NC = np.where(gem_df['count NC'] > (p * NC_len_train))
     
-    keep_both = np.unique((np.append(keep_K, keep_NK)))
+    keep_both = np.unique((np.append(keep_C, keep_NC)))
     keep_token = list(gem_df['token'][keep_both])
     
-    new_df = pd.concat([gem_df['token'][keep_both], gem_df['count K'][keep_both], gem_df['count NK'][keep_both]], axis = 1)
+    new_df = pd.concat([gem_df['token'][keep_both], gem_df['count C'][keep_both], gem_df['count NC'][keep_both]], axis = 1)
     new_df = setColRowNames(new_df, new_df.columns, new_df['token'])
     
     return(keep_token, new_df)
 
-def delSelteneWoerter2(vect, X_train_B, X_train_F, X_train_K, X_train_R, X_train_T, p, y_train):
+def delSelteneWoerter2(vect, X_train_J, X_train_F, X_train_C, X_train_R, X_train_D, p, y_train):
     
 
-    count_DF_B = getTokenCount(vect, X_train_B, 'count B')
+    count_DF_J = getTokenCount(vect, X_train_J, 'count J')
     count_DF_F = getTokenCount(vect, X_train_F, 'count F')
-    count_DF_K = getTokenCount(vect, X_train_K, 'count K')
+    count_DF_C = getTokenCount(vect, X_train_C, 'count C')
     count_DF_R = getTokenCount(vect, X_train_R, 'count R')
-    count_DF_T = getTokenCount(vect, X_train_T, 'count T')
+    count_DF_D = getTokenCount(vect, X_train_T, 'count D')
     
-    gem_1 = pd.merge(count_DF_B, count_DF_F, how = 'outer', on = 'token')
-    gem_2 = pd.merge(gem_1, count_DF_K, how = 'outer', on = 'token')
+    gem_1 = pd.merge(count_DF_J, count_DF_F, how = 'outer', on = 'token')
+    gem_2 = pd.merge(gem_1, count_DF_C, how = 'outer', on = 'token')
     gem_3 = pd.merge(gem_2, count_DF_R, how = 'outer', on = 'token')
-    gem_4 = pd.merge(gem_3, count_DF_T, how = 'outer', on = 'token')
-#    gem_df = pd.concat([count_DF_B, count_DF_F, count_DF_K, count_DF_R, count_DF_T])#, on = 'token', how = 'outer')
+    gem_4 = pd.merge(gem_3, count_DF_D, how = 'outer', on = 'token')
     gem_df = gem_4    
     gem_df = gem_df.fillna(0)
     
-    B_len = len(myGleich(y_train, 'B'))
+    J_len = len(myGleich(y_train, 'J'))
     F_len = len(myGleich(y_train, 'F'))
-    K_len = len(myGleich(y_train, 'K'))
+    C_len = len(myGleich(y_train, 'C'))
     R_len = len(myGleich(y_train, 'R'))
-    T_len = len(myGleich(y_train, 'T'))
+    D_len = len(myGleich(y_train, 'D'))
     
-    keep_B = gem_df['token'][gem_df['count B'] > (p * B_len)]
+    keep_J = gem_df['token'][gem_df['count J'] > (p * J_len)]
     keep_F = gem_df['token'][gem_df['count F'] > (p * F_len)]
-    keep_K = gem_df['token'][gem_df['count K'] > (p * K_len)]
+    keep_C = gem_df['token'][gem_df['count C'] > (p * C_len)]
     keep_R = gem_df['token'][gem_df['count R'] > (p * R_len)]
-    keep_T = gem_df['token'][gem_df['count T'] > (p * T_len)]
+    keep_D = gem_df['token'][gem_df['count D'] > (p * D_len)]
    
-    keep_all = list(keep_B) + list(keep_F) + list(keep_K) + list(keep_R) + list(keep_T)    
+    keep_all = list(keep_B) + list(keep_F) + list(keep_C) + list(keep_R) + list(keep_D)    
     keep_token = np.unique(keep_all)
     
     gem_dfT = gem_df.T
@@ -1225,43 +1215,43 @@ def countFuncAll(dtm, token_vec):
     return countvec
 
 
-def myNotIn(vector, teilvector):
+def myNotIn(vector, partvector):
     '''
     returns vector without the elements contained in teilvector
     
     Inputs:     vector - long vector 
-                teilvector - vector with elements to be removed from vector
+                partvector - vector with elements to be removed from vector
         
-    Outputs:    neuvek - new vector without elements from teilvector
+    Outputs:    newvec - new vector without elements from partvector
     '''
-    neuvek = []
+    newvec = []
     for i in range(len(vector)):
-        if vector[i] not in teilvector:
-            neuvek.append(vector[i])
-    return(neuvek)
+        if vector[i] not in partvector:
+            newvec.append(vector[i])
+    return(newvec)
 
 
-def delWenige(anzahlvector, anzahl, token_vek):
+def delWenige(countvector, count, token_vec):
     '''
     removes from a vector all words that occur less than or equal to "anzahl"
     times and returns which words from token_vek remain, i.e. those that occur
     more frequently than "anzahl"
     also works for n-grams
     
-    Inputs:     anzahlvector
-                anzahl
-                token_vek
+    Inputs:     countvector
+                count
+                token_vec
                 
     Outputs:    keep_words
 
     '''
     dellist = []
-    for i in range(anzahl):
-        dellist += myGleich(anzahlvector, i + 1)
+    for i in range(count):
+        dellist += myGleich(countvector, i + 1)
     
-    keep = myNotIn(range(len(anzahlvector)), dellist)
+    keep = myNotIn(range(len(countvector)), dellist)
     
-    keep_words = np.array(token_vek)[keep]
+    keep_words = np.array(token_vec)[keep]
     
     return keep_words
 
@@ -1282,8 +1272,8 @@ def getTFIDF(tf):
     
     for j in range(J):
         # number of documents where the term is NOT present
-        nichtent = len(myGleich(tf_array[:,j],0))
-        df.append(J - nichtent)
+        notpres = len(myGleich(tf_array[:,j],0))
+        df.append(J - notpres)
     
     idf = []
     for j in range(J):
@@ -1297,62 +1287,62 @@ def getTFIDF(tf):
 # =============================================================================
 
 
-def giniCalc(token, dokvek, auftvek):
+def giniCalc(token, docvec, occvec):
     '''
     computes the normalized Gini coefficient of a token
     
     Inputs:
                 token
-                dokvek - contains "number of documents in class 1 with token", ..., 
+                docvec - contains "number of documents in class 1 with token", ..., 
                          "number of documents in class n with token"
-                auftvek - contains "number of documents in class 1", ...,
+                occvec - contains "number of documents in class 1", ...,
                           "number of documents in class n"
     
             
     Output:     gini - Gini coefficient of the token
     '''
     try: 
-        n = len(auftvek)
+        n = len(occvec)
         p = []
         for i in range(n):
-            p.append(dokvek[i] / np.sum(dokvek))
-        P = auftvek
+            p.append(docvec[i] / np.sum(docvec))
+        P = occvec
         p_tilde = []
         for i in range(n):
             p_tilde.append(p[i] / P[i])
-        p_tilde_ges = np.sum(p_tilde)
+        p_tilde_all = np.sum(p_tilde)
         gini = 0
         for i in range(n):
-            gini += (p_tilde[i] / p_tilde_ges) ** 2
+            gini += (p_tilde[i] / p_tilde_all) ** 2
     except:
         gini = 0
     return gini
 
 
-def getGini(df, auftvek):
+def getGini(df, occvec):
     gini_ind = []
     token = list(df['token'])
     for t in range(len(token)):
-        K_count = list(df['count K'])[t]
-        NK_count = list(df['count NK'])[t]
-        gini_ind.append(giniCalc(token[t], [K_count, NK_count], auftvek))
+        C_count = list(df['count C'])[t]
+        NC_count = list(df['count NC'])[t]
+        gini_ind.append(giniCalc(token[t], [C_count, NC_count], occvec))
     return gini_ind
 
 
-def getGini2(df, auftvek):
+def getGini2(df, occvec):
     gini_ind = []
     token = list(df['token'])
     for t in range(len(token)):
-        B_count = list(df['count B'])[t]
+        J_count = list(df['count J'])[t]
         F_count = list(df['count F'])[t]
-        K_count = list(df['count K'])[t]
+        C_count = list(df['count C'])[t]
         R_count = list(df['count R'])[t]
-        T_count = list(df['count T'])[t]
+        D_count = list(df['count D'])[t]
         gini_ind.append(
             giniCalc(
                 token[t],
-                [B_count, F_count, K_count, R_count, T_count],
-                auftvek
+                [J_count, F_count, C_count, R_count, D_count],
+                occvec
             )
         )
     return gini_ind
@@ -1377,93 +1367,93 @@ def createWC(txt, sw, name, mw = 200):
     os.chdir(r'W:\Sonder\lva-93300\Schriftstücke\Output\Wordclouds')
     cloud.to_file(name)
 
-def getHäufigeWörter(txt, nummer = 200):
+def getHäufigeWörter(txt, number = 200):
          
     word_cloud_dict = Counter(' '.join(txt).split())
     bigrams = [' '.join(b) for l in [' '.join(txt)] for b in zip(l.split(' ')[:-1], l.split(' ')[1:])]
     word_cloud_dict_bi = Counter(bigrams)
 
-    haufig = word_cloud_dict.most_common(nummer)
-    haufig_bi = word_cloud_dict_bi.most_common(nummer)
+    freq = word_cloud_dict.most_common(number)
+    freq_bi = word_cloud_dict_bi.most_common(number)
     
     mcwords = []
     mcwords_bi = []
-    for i in range(nummer):
-        mcwords.append(haufig[i][0])
-        mcwords_bi.append(haufig_bi[i][0])
+    for i in range(number):
+        mcwords.append(freq[i][0])
+        mcwords_bi.append(freq_bi[i][0])
         
-        haufig_sl = set(mcwords).difference(stop_words_stem)
+        freq_sl = set(mcwords).difference(stop_words_stem)
     
-    return(haufig_sl, mcwords_bi)
+    return(freq_sl, mcwords_bi)
 
-def getHäufigeWörtermitSW(txt, nummerw, nummerbi):
+def getHäufigeWörtermitSW(txt, numberw, numberbi):
     word_cloud_dict = Counter(' '.join(txt).split())
     bigrams = [' '.join(b) for l in [' '.join(txt)] for b in zip(l.split(' ')[:-1], l.split(' ')[1:])]
     word_cloud_dict_bi = Counter(bigrams)
 
-    haufig = word_cloud_dict.most_common(nummerw)
-    haufig_bi = word_cloud_dict_bi.most_common(nummerbi)
-    return(haufig, haufig_bi)
+    freq = word_cloud_dict.most_common(numberw)
+    freq_bi = word_cloud_dict_bi.most_common(numberbi)
+    return(freq, freq_bi)
     
     
-def getAnzahlen(compwortvek, Klasse1, Klasse2):
-    inKl1 = []
-    for i in compwortvek:
+def getAnzahlen(compwordvec, class1, class2):
+    incl1 = []
+    for i in compwordvec:
         count = 0
-        for j in range(len(Klasse1)):
-            if i in Klasse1[j].split():
+        for j in range(len(class1)):
+            if i in class1[j].split():
                 count += 1
-            elif i in [' '.join(b) for l in [' '.join(Klasse1[j].split())] for b in zip(l.split(' ')[:-1], l.split(' ')[1:])]:
+            elif i in [' '.join(b) for l in [' '.join(class1[j].split())] for b in zip(l.split(' ')[:-1], l.split(' ')[1:])]:
                 count += 1
-        inKl1.append(count)
+        incl1.append(count)
     
-    inKl2 = []
-    for i in compwortvek:
+    incl2 = []
+    for i in compwordvec:
         count = 0
-        for j in range(len(Klasse2)):
-            if i in Klasse2[j].split():
+        for j in range(len(class2)):
+            if i in class2[j].split():
                 count += 1
-            elif i in [' '.join(b) for l in [' '.join(Klasse2[j].split())] for b in zip(l.split(' ')[:-1], l.split(' ')[1:])]:
+            elif i in [' '.join(b) for l in [' '.join(class2[j].split())] for b in zip(l.split(' ')[:-1], l.split(' ')[1:])]:
                 count += 1
         inKl2.append(count)
         
-    summeKl1 = 0
-    for j in range(len(Klasse1)):
-        if any(map(lambda v: v in compwortvek, Klasse1[j].split())):
-            summeKl1 += 1
-        elif any(map(lambda v: v in compwortvek, [' '.join(b) for l in [' '.join(Klasse1[j].split())] for b in zip(l.split(' ')[:-1], l.split(' ')[1:])])):
-            summeKl1 += 1
+    sumcl1 = 0
+    for j in range(len(class1)):
+        if any(map(lambda v: v in compwordvec, class1[j].split())):
+            sumcl1 += 1
+        elif any(map(lambda v: v in compwordvec, [' '.join(b) for l in [' '.join(class1[j].split())] for b in zip(l.split(' ')[:-1], l.split(' ')[1:])])):
+            sumcl1 += 1
     
-    summeKl2 = 0
-    for j in range(len(Klasse2)):
-        if any(map(lambda v: v in compwortvek, Klasse2[j].split())):
-            summeKl2 += 1
-        elif any(map(lambda v: v in compwortvek, [' '.join(b) for l in [' '.join(Klasse2[j].split())] for b in zip(l.split(' ')[:-1], l.split(' ')[1:])])):
-            summeKl2 += 1
+    sumcl2 = 0
+    for j in range(len(class2)):
+        if any(map(lambda v: v in compwordvec, class2[j].split())):
+            sumcl2 += 1
+        elif any(map(lambda v: v in compwordvec, [' '.join(b) for l in [' '.join(class2[j].split())] for b in zip(l.split(' ')[:-1], l.split(' ')[1:])])):
+            sumcl2 += 1
             
-    return(inKl1, summeKl1, inKl2, summeKl2)
+    return(incl1, sumcl1, incl2, sumcl2)
 
 
 
-def getWerte(k_words, nk_words, Xtr, ytr, positiv = 'K', negativ = 'N'):
+def getWerte(c_words, nc_words, Xtr, ytr, positive = 'C', negative = 'N'):
     ypred = []
     for i in range(len(Xtr)):
-        ypred.append(gevoFinden(Xtr[i], k_words, nk_words, pos = positiv, neg = negativ))
+        ypred.append(gevoFinden(Xtr[i], c_words, nc_words, pos = positive, neg = negative))
     
-    if positiv == 1:
-        cm_falsch = confusion_matrix(ytr, ypred)
+    if positive == 1:
+        cm_wrong = confusion_matrix(ytr, ypred)
         cm = np.array([[1, 1], [1, 1]])
-        cm[0][0] = cm_falsch[1][1]
-        cm[1][1] = cm_falsch[0][0]
-        cm[0][1] = cm_falsch[1][0]
-        cm[1][0] = cm_falsch[0][1]
+        cm[0][0] = cm_wrong[1][1]
+        cm[1][1] = cm_wrong[0][0]
+        cm[0][1] = cm_wrong[1][0]
+        cm[1][0] = cm_wrong[0][1]
         # cm = cm_new
     else:
         cm = confusion_matrix(ytr, ypred)
     sensi = cm[0][0]/(sum(cm[0]))
-    spezi = cm[1][1]/(sum(cm[1]))
-    richtigkl = (cm[0][0] + cm[1][1])/len(ypred)
-    return(cm, sensi, spezi, richtigkl, ypred)
+    speci = cm[1][1]/(sum(cm[1]))
+    accuracy = (cm[0][0] + cm[1][1])/len(ypred)
+    return(cm, sensi, speci, accuracy, ypred)
 
 def getWerteKlassi(ytr, ypred):
     '''
@@ -1478,16 +1468,16 @@ def getWerteKlassi(ytr, ypred):
     cm_new[1][0] = cm[0][1]
     cm = cm_new
     sensi = cm[0][0]/(sum(cm[0]))
-    spezi = cm[1][1]/(sum(cm[1]))
-    richtigkl = (cm[0][0] + cm[1][1])/len(ypred)
-    return(cm, sensi, spezi, richtigkl)
+    speci = cm[1][1]/(sum(cm[1]))
+    accuracy = (cm[0][0] + cm[1][1])/len(ypred)
+    return(cm, sensi, speci, accuracy)
 
 
-def getBestCombinations(words, Xtr, ytr, gevo1, gevo2 = 'K'):
+def getBestCombinations(words, Xtr, ytr, gevo1, gevo2 = 'C'):
     '''
-    here I want to compare with K, and depending on how the confusion matrix
-    is defined, K must be gevo2 if the first letter of the class
-    comes BEFORE K in the alphabet, otherwise gevo1
+    here I want to compare with C, and depending on how the confusion matrix
+    is defined, C must be gevo2 if the first letter of the class
+    comes BEFORE C in the alphabet, otherwise gevo1
 
     '''
     numbers = list(range(len(words)))
@@ -1497,43 +1487,36 @@ def getBestCombinations(words, Xtr, ytr, gevo1, gevo2 = 'K'):
             combinations.append(combination)
 
     cms = []
-    frichtig = []
-    kombis = []
+    fright = []
+    combis = []
     for i in range(len(combinations)):
-        kombis.append(list(np.array(words)[list(list(combinations)[i])]))
+        combis.append(list(np.array(words)[list(list(combinations)[i])]))
         if gevo2 == 'R':
-            [cm, a, b, c, d] = getWerte(kombis[i], [], Xtr, ytr, gevo1, gevo2)
+            [cm, a, b, c, d] = getWerte(combis[i], [], Xtr, ytr, gevo1, gevo2)
             cm_new = np.array([[1, 1], [1, 1]])
             cm_new[0][0] = cm[1][0]
             cm_new[1][1] = cm[0][1]
             cm_new[0][1] = cm[1][1]
             cm_new[1][0] = cm[0][0]
             cm_fin = cm_new
-        elif gevo2 == 'T':
-            [cm, a, b, c, d] = getWerte(kombis[i], [], Xtr, ytr, gevo1, gevo2)
-            cm_new = np.array([[1, 1], [1, 1]])
-            cm_new[0][0] = cm[0][1]
-            cm_new[1][1] = cm[1][0]
-            cm_new[0][1] = cm[0][0]
-            cm_new[1][0] = cm[1][1]
-            cm_fin = cm_new
         else:
-            [cm_fin, a, b, c, d] = getWerte(kombis[i], [], Xtr, ytr, gevo1, gevo2)
+            [cm_fin, a, b, c, d] = getWerte(combis[i], [], Xtr, ytr, gevo1, gevo2)
         cms.append(cm_fin)
         frichtig.append(cms[i][0][0])
         
-    best_kombis = myGleich(frichtig, max(frichtig))
+    best_combis = myGleich(fright, max(fright))
 
-    np.array(kombis)[best_kombis]
+    np.array(kombis)[best_combis]
 
-    krichtig = []
-    for i in best_kombis:
-        krichtig.append(cms[i][1][1])
+    kright = []
+    for i in best_combis:
+        kright.append(cms[i][1][1])
         
-    best_kombis_2 = myGleich(krichtig, max(krichtig))
+    best_combis_2 = myGleich(kright, max(kright))
 
-    erg = np.array(kombis)[list(np.array(best_kombis)[best_kombis_2])]
-    return erg
+    res = np.array(combis)[list(np.array(best_combis)[best_combis_2])]
+    return res
+    
 ### =============================================================================
 ### Random Forest
 ### =============================================================================
@@ -1585,16 +1568,16 @@ def ergtable(y_test, y_pred, true_probs):
                 y_pred
                 true_probs (partly from rfBerechnen)
     
-    Outputs:    erg - 
+    Outputs:    res - 
 
     '''
-    erg = pd.DataFrame()
-    erg['true label'] = y_test
-    # erg['probability'] = true_probs
-    erg['predicted label'] = y_pred
-    erg['correct'] = [0] * len(y_test)
-    erg['correct'][myvectorGleich(y_test,y_pred)] = 1
-    return(erg)
+    res = pd.DataFrame()
+    res['true label'] = y_test
+    # res['probability'] = true_probs
+    res['predicted label'] = y_pred
+    res['correct'] = [0] * len(y_test)
+    res['correct'][myvectorGleich(y_test,y_pred)] = 1
+    return(res)
 
 def getPred(probs, threshold):
     y_pred = []
@@ -1724,14 +1707,14 @@ def ROCFunc(y_test, y_pred, name, xlab = "1 - Specificity", ylab = "Sensitivity"
     plt.text(0.95, 0.05, 'AUC = %0.4f' % auc, ha='right', fontsize=10, 
               weight='bold', color='blue')
     
-    os.chdir(r'W:\Sonder\lva-93300\Schriftstücke\Output\Plots')
+    os.chdir(r'W:\your_folder\Output\Plots')
     plt.savefig(name, dpi=300, bbox_inches='tight')
     
     plt.show()
     return(auc)
 
 
-def HistFuncK(daten, name, xlab = "Probability of termination", ylab = "Number of terminations"):
+def HistFuncK(data, name, xlab = "Probability of termination", ylab = "Number of terminations"):
     '''
     computes ROC curve
     
@@ -1753,13 +1736,13 @@ def HistFuncK(daten, name, xlab = "Probability of termination", ylab = "Number o
     plt.xlim([0, 1])
     plt.ylim([0, 4000])
     
-    plt.hist(daten, color = 'lightgreen')
-    os.chdir(r'W:\Sonder\lva-93300\Schriftstücke\Output\Plots')
+    plt.hist(data, color = 'lightgreen')
+    os.chdir(r'W:\your_folder\Output\Plots')
     plt.savefig(name, dpi=300, bbox_inches='tight')
     plt.show()
     return()
 
-def HistFuncNK(daten, name, xlab = "Probability of termination", ylab = "Number of other documents"):
+def HistFuncNK(data, name, xlab = "Probability of termination", ylab = "Number of other documents"):
     '''
     computes ROC curve
     
@@ -1781,13 +1764,13 @@ def HistFuncNK(daten, name, xlab = "Probability of termination", ylab = "Number 
     plt.xlim([0, 1])
     plt.ylim([0, 8000])
     
-    plt.hist(daten, color = 'lightblue')
-    os.chdir(r'W:\Sonder\lva-93300\Schriftstücke\Output\Plots')
+    plt.hist(data, color = 'lightblue')
+    os.chdir(r'W:\your_folder\Output\Plots')
     plt.savefig(name, dpi=300, bbox_inches='tight')
     plt.show()
     return()
 
-def GiniFunc(daten, name, xlab = "Token sorted by Gini index", ylab = "Gini index"):
+def GiniFunc(data, name, xlab = "Token sorted by Gini index", ylab = "Gini index"):
     matplotlib.rcParams['font.family'] = 'serif'
     matplotlib.rcParams['font.style'] = 'normal'
     plt.figure(figsize=(7, 4), dpi=300)
@@ -1799,14 +1782,14 @@ def GiniFunc(daten, name, xlab = "Token sorted by Gini index", ylab = "Gini inde
     #plt.xlim([0, 1])
     plt.ylim([0, 1])
     
-    plt.plot(np.sort(daten))#, color = 'lightgreen')
-    os.chdir(r'W:\Sonder\lva-93300\Schriftstücke\Output\Plots')
+    plt.plot(np.sort(data))#, color = 'lightgreen')
+    os.chdir(r'W:\your_folder\Output\Plots')
     plt.savefig(name, dpi=300, bbox_inches='tight')
     plt.show()
     return()
 
 
-def AnteileFunc(daten, name, xlab = "Token sorted by differences", ylab = "Difference"):
+def AnteileFunc(data, name, xlab = "Token sorted by differences", ylab = "Difference"):
     matplotlib.rcParams['font.family'] = 'serif'
     matplotlib.rcParams['font.style'] = 'normal'
     plt.figure(figsize=(7, 4), dpi=300)
@@ -1818,8 +1801,8 @@ def AnteileFunc(daten, name, xlab = "Token sorted by differences", ylab = "Diffe
     #plt.xlim([0, 1])
     plt.ylim([-1, 1])
     
-    plt.plot(np.sort(daten))#, color = 'lightgreen')
-    os.chdir(r'W:\Sonder\lva-93300\Schriftstücke\Output\Plots')
+    plt.plot(np.sort(data))#, color = 'lightgreen')
+    os.chdir(r'W:\your_folder\Output\Plots')
     plt.savefig(name, dpi=300, bbox_inches='tight')
     plt.show()
     return()
@@ -1831,28 +1814,28 @@ def AnteileFunc(daten, name, xlab = "Token sorted by differences", ylab = "Diffe
 # =============================================================================
 # klgr TRUE: all data
 # klgr FALSE: small matrix
-def RFcomplete(grund, dtm_train, dtm_test, y_train, y_test, X_train_ind, X_test_ind, klgr = True):
-    [cm_train, sensi_train, spezi_train, richtigkl_train, y_pred_train, 
+def RFcomplete(reason, dtm_train, dtm_test, y_train, y_test, X_train_ind, X_test_ind, klgr = True):
+    [cm_train, sensi_train, speci_train, accuracy_train, y_pred_train, 
      mydf_train] = RFAll(dtm_train, dtm_train, y_train, y_train, X_train_ind)
     if klgr == True:
-        name1 = grund + 'hist_K_RF_train.png'   
-        name2 = grund + 'hist_NK_RF_train.png'  
-        name3 = grund + 'roc_RF_train.png'
-        name4 = grund + 'hist_K_RF_test.png'   
-        name5 = grund + 'hist_NK_RF_test.png' 
-        name6 = grund + 'roc_RF_test.png'
+        name1 = reason + 'hist_C_RF_train.png'   
+        name2 = reason + 'hist_NC_RF_train.png'  
+        name3 = reason + 'roc_RF_train.png'
+        name4 = reason + 'hist_C_RF_test.png'   
+        name5 = reason + 'hist_NC_RF_test.png' 
+        name6 = reason + 'roc_RF_test.png'
     else:
-        name1 = grund + 'hist_K_RF_train_kl.png'   
-        name2 = grund + 'hist_NK_RF_train_kl.png'  
-        name3 = grund + 'roc_RF_train_kl.png'
-        name4 = grund + 'hist_K_RF_test_kl.png'   
-        name5 = grund + 'hist_NK_RF_test_kl.png' 
-        name6 = grund + 'roc_RF_test_kl.png'
+        name1 = reason + 'hist_C_RF_train_kl.png'   
+        name2 = reason + 'hist_NC_RF_train_kl.png'  
+        name3 = reason + 'roc_RF_train_kl.png'
+        name4 = reason + 'hist_C_RF_test_kl.png'   
+        name5 = reason + 'hist_NC_RF_test_kl.png' 
+        name6 = reason + 'roc_RF_test_kl.png'
               
-    wkeiten_pos = mydf_train['probability positive'][mydf_train['true class'] == 1]
-    HistFuncK(wkeiten_pos, name1)
-    wkeiten_neg = np.sort(mydf_train['probability positive'][mydf_train['true class'] == 0])
-    HistFuncNK(wkeiten_neg, name2)
+    probs_pos = mydf_train['probability positive'][mydf_train['true class'] == 1]
+    HistFuncK(probs_pos, name1)
+    probs_neg = np.sort(mydf_train['probability positive'][mydf_train['true class'] == 0])
+    HistFuncNK(probs_neg, name2)
     
     ROCFunc(y_train, mydf_train['probability positive'], name3) 
 
@@ -1863,54 +1846,54 @@ def RFcomplete(grund, dtm_train, dtm_test, y_train, y_test, X_train_ind, X_test_
     
     ts = list(th['threshold'][th['sensitivity + specificity'] == max(th['sensitivity + specificity'])])[0]                  
 
-    if min(wkeiten_pos) > max(wkeiten_neg):
+    if min(probs_pos) > max(probs_neg):
         random.seed(1802)
-        ts = random.uniform(max(wkeiten_neg), min(wkeiten_pos))
+        ts = random.uniform(max(probs_neg), min(probs_pos))
     
     y_pred_train_new = getPred(mydf_train['probability positive'], ts)
-    [cm_train_new, sensi_train_new, spezi_train_new,
-     richtigkl_train_new] = getWerteKlassi(y_train, y_pred_train_new)
+    [cm_train_new, sensi_train_new, speci_train_new,
+     accuracy_train_new] = getWerteKlassi(y_train, y_pred_train_new)
 
-    [cm_test, sensi_test, spezi_test, richtigkl_test, y_pred_test, 
+    [cm_test, sensi_test, speci_test, accuracy_test, y_pred_test, 
      mydf_test] = RFAll(dtm_train, dtm_test, y_train, y_test, X_test_ind,
                            threshold_RF = ts)
                            
-    wkeiten_pos = mydf_test['probability positive'][mydf_test['true class'] == 1]
-    HistFuncK(wkeiten_pos, name4)
-    wkeiten_neg = np.sort(mydf_test['probability positive'][mydf_test['true class'] == 0])
-    HistFuncNK(wkeiten_neg, name5)
+    probs_pos = mydf_test['probability positive'][mydf_test['true class'] == 1]
+    HistFuncK(probs_pos, name4)
+    probs_neg = np.sort(mydf_test['probability positive'][mydf_test['true class'] == 0])
+    HistFuncNK(probs_neg, name5)
     
     ROCFunc(y_test, mydf_test['probability positive'], name6) 
 
-    return(cm_train, sensi_train, spezi_train, richtigkl_train, y_pred_train, 
+    return(cm_train, sensi_train, speci_train, accuracy_train, y_pred_train, 
            mydf_train, ts,
-           cm_train_new, sensi_train_new, spezi_train_new, richtigkl_train_new,
+           cm_train_new, sensi_train_new, speci_train_new, accuracy_train_new,
            y_pred_train_new,
-           cm_test, sensi_test, spezi_test, richtigkl_test, y_pred_test,
+           cm_test, sensi_test, speci_test, accuracy_test, y_pred_test,
            mydf_test)  
 
-def SVMcomplete(grund, dtm_train, dtm_test, y_train, y_test, X_train_ind, X_test_ind, klgr = True):
-    [cm_train, sensi_train, spezi_train, richtigkl_train, y_pred_train, 
+def SVMcomplete(reason, dtm_train, dtm_test, y_train, y_test, X_train_ind, X_test_ind, klgr = True):
+    [cm_train, sensi_train, speci_train, accuracy_train, y_pred_train, 
      mydf_train] = SVMAll(dtm_train, dtm_train, y_train, y_train, X_train_ind)
     if klgr == True:
-        name1 = grund + '_hist_K_SVM_train.png'   
-        name2 = grund + '_hist_NK_SVM_train.png'  
-        name3 = grund + '_roc_SVM_train.png'
-        name4 = grund + '_hist_K_SVM_test.png'   
-        name5 = grund + '_hist_NK_SVM_test.png' 
-        name6 = grund + '_roc_SVM_test.png'
+        name1 = reason + '_hist_K_SVM_train.png'   
+        name2 = reason + '_hist_NK_SVM_train.png'  
+        name3 = reason + '_roc_SVM_train.png'
+        name4 = reason + '_hist_K_SVM_test.png'   
+        name5 = reason + '_hist_NK_SVM_test.png' 
+        name6 = reason + '_roc_SVM_test.png'
     else:
-        name1 = grund + '_hist_K_SVM_train_kl.png'   
-        name2 = grund + '_hist_NK_SVM_train_kl.png'  
-        name3 = grund + '_roc_SVM_train_kl.png'
-        name4 = grund + '_hist_K_SVM_test_kl.png'   
-        name5 = grund + '_hist_NK_SVM_test_kl.png' 
-        name6 = grund + '_roc_SVM_test_kl.png'
+        name1 = reason + '_hist_K_SVM_train_kl.png'   
+        name2 = reason + '_hist_NK_SVM_train_kl.png'  
+        name3 = reason + '_roc_SVM_train_kl.png'
+        name4 = reason + '_hist_K_SVM_test_kl.png'   
+        name5 = reason + '_hist_NK_SVM_test_kl.png' 
+        name6 = reason + '_roc_SVM_test_kl.png'
               
-    wkeiten_pos = mydf_train['probability positive'][mydf_train['true class'] == 1]
-    HistFuncK(wkeiten_pos, name1)
-    wkeiten_neg = np.sort(mydf_train['probability positive'][mydf_train['true class'] == 0])
-    HistFuncNK(wkeiten_neg, name2)
+    probs_pos = mydf_train['probability positive'][mydf_train['true class'] == 1]
+    HistFuncK(probs_pos, name1)
+    probs_neg = np.sort(mydf_train['probability positive'][mydf_train['true class'] == 0])
+    HistFuncNK(probs_neg, name2)
     
     ROCFunc(y_train, mydf_train['probability positive'], name3) 
 
@@ -1921,69 +1904,69 @@ def SVMcomplete(grund, dtm_train, dtm_test, y_train, y_test, X_train_ind, X_test
     
     ts = list(th['threshold'][th['sensitivity + specificity'] == max(th['sensitivity + specificity'])])[0]                  
 
-    if min(wkeiten_pos) > max(wkeiten_neg):
+    if min(probs_pos) > max(probs_neg):
         random.seed(1802)
-        ts = random.uniform(max(wkeiten_neg), min(wkeiten_pos))
+        ts = random.uniform(max(probs_neg), min(probs_pos))
     
     y_pred_train_new = getPred(mydf_train['probability positive'], ts)
-    [cm_train_new, sensi_train_new, spezi_train_new,
-     richtigkl_train_new] = getWerteKlassi(y_train, y_pred_train_new)
+    [cm_train_new, sensi_train_new, speci_train_new,
+     accuracy_train_new] = getWerteKlassi(y_train, y_pred_train_new)
 
-    [cm_test, sensi_test, spezi_test, richtigkl_test, y_pred_test, 
+    [cm_test, sensi_test, speci_test, accuracy_test, y_pred_test, 
      mydf_test] = SVMAll(dtm_train, dtm_test, y_train, y_test, X_test_ind,
                            threshold_SVM = ts)
                            
-    wkeiten_pos = mydf_test['probability positive'][mydf_test['true class'] == 1]
-    HistFuncK(wkeiten_pos, name4)
-    wkeiten_neg = np.sort(mydf_test['probability positive'][mydf_test['true class'] == 0])
-    HistFuncNK(wkeiten_neg, name5)
+    probs_pos = mydf_test['probability positive'][mydf_test['true class'] == 1]
+    HistFuncK(probs_pos, name4)
+    probs_neg = np.sort(mydf_test['probability positive'][mydf_test['true class'] == 0])
+    HistFuncNK(probs_neg, name5)
     
     ROCFunc(y_test, mydf_test['probability positive'], name6) 
 
-    return(cm_train, sensi_train, spezi_train, richtigkl_train, y_pred_train, 
+    return(cm_train, sensi_train, speci_train, accuracy_train, y_pred_train, 
            mydf_train, ts,
-           cm_train_new, sensi_train_new, spezi_train_new, richtigkl_train_new,
+           cm_train_new, sensi_train_new, speci_train_new, accuracy_train_new,
            y_pred_train_new,
-           cm_test, sensi_test, spezi_test, richtigkl_test, y_pred_test,
+           cm_test, sensi_test, speci_test, accuracy_test, y_pred_test,
            mydf_test)
 
                  
     
-def getEineKlass(x_true, fpr, bpr, rpr, tpr, kpr):
+def getEineKlass(x_true, fpr, jpr, rpr, dpr, cpr):
     f_x = list(set(fpr).intersection(x_true))
-    b_x = list(set(bpr).intersection(x_true))
+    j_x = list(set(jpr).intersection(x_true))
     r_x = list(set(rpr).intersection(x_true))
-    t_x = list(set(tpr).intersection(x_true))
-    k_x = list(set(kpr).intersection(x_true))
-    all_x = [len(f_x), len(b_x), len(r_x), len(t_x), len(k_x)]
+    d_x = list(set(dpr).intersection(x_true))
+    c_x = list(set(cpr).intersection(x_true))
+    all_x = [len(f_x), len(j_x), len(r_x), len(d_x), len(c_x)]
     return(all_x)
 
-def getErgebnisse(y_pred_F, y_pred_B, y_pred_R, y_pred_T, X_test, y_test):
+def getErgebnisse(y_pred_F, y_pred_J, y_pred_R, y_pred_D, X_test, y_test):
 
     f_pred = myGleich(y_pred_F, 1) + myGleich(y_pred_F, 'F')
-    b_pred = myGleich(y_pred_B, 1) + myGleich(y_pred_B, 'B')
+    j_pred = myGleich(y_pred_J, 1) + myGleich(y_pred_J, 'J')
     r_pred = myGleich(y_pred_R, 1) + myGleich(y_pred_R, 'R')
-    t_pred = myGleich(y_pred_T, 1) + myGleich(y_pred_T, 'T')
-    k_pred = list(set(range(len(X_test))).difference(f_pred + b_pred + r_pred + t_pred))   
+    d_pred = myGleich(y_pred_D, 1) + myGleich(y_pred_D, 'D')
+    c_pred = list(set(range(len(X_test))).difference(f_pred + j_pred + r_pred + d_pred))   
     f_true = myGleich(y_test, 'F') 
-    b_true = myGleich(y_test, 'B') 
+    j_true = myGleich(y_test, 'J') 
     r_true = myGleich(y_test, 'R') 
-    t_true = myGleich(y_test, 'T') 
-    k_true = myGleich(y_test, 'K') + myGleich(y_test, 'S')
+    d_true = myGleich(y_test, 'D') 
+    c_true = myGleich(y_test, 'C') + myGleich(y_test, 'O')
     
-    ergdf = pd.DataFrame([[0] * 5] * 5)
-    ergdf = setColRowNames(ergdf, 
-                            ['F true', 'B true', 'R true', 'T true', 'K true'],
-                            ['F predicted', 'B predicted', 'R predicted', 'T predicted', 'K predicted'])
+    resdf = pd.DataFrame([[0] * 5] * 5)
+    resdf = setColRowNames(resdf, 
+                            ['F true', 'J true', 'R true', 'D true', 'C true'],
+                            ['F predicted', 'J predicted', 'R predicted', 'D predicted', 'C predicted'])
     
-    ergdf['F true'] = getEineKlass(f_true, f_pred, b_pred, r_pred, t_pred, k_pred)
-    ergdf['B true'] = getEineKlass(b_true, f_pred, b_pred, r_pred, t_pred, k_pred)
-    ergdf['R true'] = getEineKlass(r_true, f_pred, b_pred, r_pred, t_pred, k_pred)
-    ergdf['T true'] = getEineKlass(t_true, f_pred, b_pred, r_pred, t_pred, k_pred)
-    ergdf['K true'] = getEineKlass(k_true, f_pred, b_pred, r_pred, t_pred, k_pred)
+    resdf['F true'] = getEineKlass(f_true, f_pred, j_pred, r_pred, d_pred, c_pred)
+    resdf['J true'] = getEineKlass(j_true, f_pred, j_pred, r_pred, d_pred, c_pred)
+    resdf['R true'] = getEineKlass(r_true, f_pred, j_pred, r_pred, d_pred, c_pred)
+    resdf['D true'] = getEineKlass(d_true, f_pred, j_pred, r_pred, d_pred, c_pred)
+    resdf['C true'] = getEineKlass(c_true, f_pred, j_pred, r_pred, d_pred, c_pred)
     
-    ergdf = ergdf.T
-    return(ergdf)
+    resdf = resdf.T
+    return(resdf)
     
 # =============================================================================
 # required for dill to work
