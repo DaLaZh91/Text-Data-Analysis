@@ -19,41 +19,41 @@ from functions import *
 
 # # 1. Cancellations
 
-[txt_C, duration_C] = ordnerEinlesen(r'W:\your_folder\data - unprotected\Cancellations')
+[txt_C, duration_C] = getFolder(r'W:\your_folder\data - unprotected\Cancellations')
 os.chdir(r'W:\your_folder\data - unprotected\texts')   
 dill.dump_session('c_03_09.pkl')
 
 # # 2. Other business processes
 
 # # Contribution break
-[txt_CB, duration_CB] = ordnerEinlesen(r'W:\your_folder\data - unprotected\Contribution_break')
+[txt_CB, duration_CB] = getFolder(r'W:\your_folder\data - unprotected\Contribution_break')
 os.chdir(r'W:\your_folder\data - unprotected\texts')    
 dill.dump_session('cb_03_01.pkl')
 
 # Premium waiver
-[txt_PW, duration_PW] = ordnerEinlesen(r'W:\your_folder\data - unprotected\Premium_waiver')
+[txt_PW, duration_PW] = getFolder(r'W:\your_folder\data - unprotected\Premium_waiver')
 os.chdir(r'W:\your_folder\data - unprotected\texts')   
 dill.dump_session('pw_03_01.pkl')
 
 # # Increase
-[txt_I, duration_I] = ordnerEinlesen(r'W:\your_folder\data - unprotected\Increase')
+[txt_I, duration_I] = getFolder(r'W:\your_folder\data - unprotected\Increase')
 os.chdir(r'W:\your_folder\data - unprotected\texts')   
 dill.dump_session('i_03_01.pkl')
 
 # # Policyholder change
-[txt_PC1, duration_PC1] = ordnerEinlesen(r'W:\your_folder\data - unprotected\Policyholder_change_part_1')
+[txt_PC1, duration_PC1] = getFolder(r'W:\your_folder\data - unprotected\Policyholder_change_part_1')
 os.chdir(r'W:\your_folder\data - unprotected\texts')    
 dill.dump_session('pc1_03_01.pkl')
 
-# [txt_PC2, duration_PC2] = ordnerEinlesen(r'W:\your_folder\data - unprotected\Policyholder_change_part_2')
+# [txt_PC2, duration_PC2] = getFolder(r'W:\your_folder\data - unprotected\Policyholder_change_part_2')
 os.chdir(r'W:\your_folder\data - unprotected\texts')   
 dill.dump_session('pc2_03_01.pkl')
 
-# [txt_PC3, duration_PC3] = ordnerEinlesen(r'W:\your_folder\data - unprotected\Policyholder_change_part_3')
+# [txt_PC3, duration_PC3] = getFolder(r'W:\your_folder\data - unprotected\Policyholder_change_part_3')
 os.chdir(r'W:\your_folder\data - unprotected\texts')    
 dill.dump_session('pc3_03_01.pkl')
 
-# [txt_PC4, duration_PC4] = ordnerEinlesen(r'W:\your_folder\data - unprotected\Policyholder_change_part_4')
+# [txt_PC4, duration_PC4] = getFolder(r'W:\your_folder\data - unprotected\Policyholder_change_part_4')
 os.chdir(r'W:\your_folder\data - unprotected\texts')     
 dill.dump_session('pc4_03_01.pkl')
 
@@ -111,8 +111,8 @@ txt_C = list(time_df_sorted['texts'])
 C_tab['texts'] = txt_C
 
 # selection = 2 means it is a cancellation to be reviewed
-Cs = myGleich(C_tab['selection'], 2)
-duplicates = myGleich(C_tab['dubble_ind (0 = is a duplicate)'], 0)
+Cs = myEqual(C_tab['selection'], 2)
+duplicates = myEqual(C_tab['dubble_ind (0 = is a duplicate)'], 0)
 
 txt_C = list(C_tab['Texts'][C_tab['selection'] == 2])
 txt_NC = list(C_tab['Texts'][C_tab['selection 2'] == 1])
@@ -125,9 +125,9 @@ del(duplicates, i, C_tab, Cs, txt_CB, txt_PW, txt_I, txt_PC)
 os.chdir(r'W:\your_folder\data - unprotected\texts')
 dill.dump_session('c_nc_04_26.pkl')
 
-new_all = seitenZusammen(all_texts)
-NC_combined = seitenZusammen(all_NC)
-C_combined = seitenZusammen(txt_C)
+new_all = pagesTogether(all_texts)
+NC_combined = pagesTogether(all_NC)
+C_combined = pagesTogether(txt_C)
 
 # =============================================================================
 # Remove duplicates
