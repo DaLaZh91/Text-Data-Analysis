@@ -962,7 +962,7 @@ def createTable(doc_list):
      
 ### write table to Excel ======================================================
 
-def tableDocument(doc_list, filename):
+def writeTable(doc_list, filename):
     '''
     creates an Excel table with the given information
     
