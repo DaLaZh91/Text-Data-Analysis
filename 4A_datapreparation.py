@@ -62,7 +62,7 @@ stop_words_stem = getStem(stop_words)
 texts_sl = []
 for i in range(len(my_stem)):
     try:
-        texts_sl.append(delWortvektor(my_stem[i], stop_words_stem))
+        texts_sl.append(delWordVector(my_stem[i], stop_words_stem))
     except:
         texts_sl.append('nan')
   
@@ -102,20 +102,20 @@ X_test = X_test[2:(len(X_test) - 2)].split(sep="', '")
 X_train = str(list(np.array(texts_nl)[X_train_ind]))
 X_train = X_train[2:(len(X_train) - 2)].split(sep="', '")
 
-X_train_C = str(list(np.array(X_train)[myGleich(y_train, 'C')]))
+X_train_C = str(list(np.array(X_train)[myEqual(y_train, 'C')]))
 X_train_C = X_train_C[2:(len(X_train_C) - 2)].split(sep="', '")
 
-X_train_NC = str(list(np.array(X_train)[myGleich(y_train, 'N')]))
+X_train_NC = str(list(np.array(X_train)[myEqual(y_train, 'N')]))
 X_train_NC = X_train_NC[2:(len(X_train_NC) - 2)].split(sep="', '")
 
 # =============================================================================
 # 3. Remove rare words (for memory reasons)
 # =============================================================================
-C_len_train = len(myGleich(y_train, 'C'))
-NC_len_train = len(myGleich(y_train, 'N'))
+C_len_train = len(myEqual(y_train, 'C'))
+NC_len_train = len(myEqual(y_train, 'N'))
 
 vect = CountVectorizer() 
-[keep_token, df_single_1] = delSelteneWoerter(
+[keep_token, df_single_1] = delRareWords(
     vect, X_train_C, X_train_NC, 0.01, C_len_train, NC_len_train
 )
 
@@ -143,22 +143,22 @@ X_test = X_test[2:(len(X_test) - 2)].split(sep="', '")
 X_train = str(list(np.array(texts_final)[X_train_ind]))
 X_train = X_train[2:(len(X_train) - 2)].split(sep="', '")
 
-X_train_C = str(list(np.array(X_train)[myGleich(y_train, 'C')]))
+X_train_C = str(list(np.array(X_train)[myEqual(y_train, 'C')]))
 X_train_C = X_train_C[2:(len(X_train_C) - 2)].split(sep="', '")
 
-X_train_NC = str(list(np.array(X_train)[myGleich(y_train, 'N')]))
+X_train_NC = str(list(np.array(X_train)[myEqual(y_train, 'N')]))
 X_train_NC = X_train_NC[2:(len(X_train_NC) - 2)].split(sep="', '")
 
 # =============================================================================
 # 4. Also remove rare words for bi- and trigrams
 # =============================================================================
 vect = CountVectorizer() 
-[keep_single, df_single] = delSelteneWoerter(
+[keep_single, df_single] = delRareWords(
     vect, X_train_C, X_train_NC, 0.005, C_len_train, NC_len_train
 )
 
 vect2 = CountVectorizer(ngram_range=(2, 2)) 
-[keep_bigram, df_bigram] = delSelteneWoerter(
+[keep_bigram, df_bigram] = delRareWords(
     vect2, X_train_C, X_train_NC, 0.01, C_len_train, NC_len_train
 )
 
