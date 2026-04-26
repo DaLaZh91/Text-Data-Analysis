@@ -19,7 +19,7 @@ from sklearn.metrics import mean_squared_error  # Lasso
 # https://laurenliz22.github.io/nlp_random_forest_and_neural_network_classifiers
 
 os.chdir(r'W:\your_folder\Python')
-from Funktionen import *
+from functions import *
 
 # =============================================================================
 # Load data & preparation
@@ -65,7 +65,7 @@ random.seed(1802)
 
 
 # Select predictions classified as class 1
-k_preds = myGleich(y_pred_1_PL, 1)
+k_preds = myEqual(y_pred_1_PL, 1)
 
 X_test_K_preds = list(np.array(X_test)[k_preds])
 
